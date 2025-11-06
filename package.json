@@ -9,6 +9,10 @@
     "backend/order-service",
     "backend/search-service"
   ],
+  "packageManager": "bun@1.1.30",
+  "trustedDependencies": [
+    "@prisma/client"
+  ],
   "scripts": {
     "prisma:generate": "prisma generate --schema prisma/schema.prisma"
   },

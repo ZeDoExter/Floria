@@ -1,13 +1,13 @@
-FROM node:20-alpine AS build
+FROM oven/bun:1 AS build
 WORKDIR /app
 COPY package.json tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
-RUN npm install --legacy-peer-deps && npm run build
+RUN bun install && bun run build
 
-FROM node:20-alpine
+FROM oven/bun:1
 WORKDIR /app
 COPY package.json ./
-RUN npm install --legacy-peer-deps --omit=dev
+RUN bun install --production
 COPY --from=build /app/dist ./dist
 EXPOSE 3004
-CMD ["node", "dist/main.js"]
+CMD ["bun", "dist/main.js"]
