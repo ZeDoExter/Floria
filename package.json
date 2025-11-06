@@ -1,0 +1,21 @@
+{
+  "name": "flora-tailor",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend/gateway",
+    "backend/product-service",
+    "backend/cart-service",
+    "backend/order-service",
+    "backend/search-service"
+  ],
+  "scripts": {
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "5.16.1"
+  },
+  "devDependencies": {
+    "prisma": "5.16.1"
+  }
+}

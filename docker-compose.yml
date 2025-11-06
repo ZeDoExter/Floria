@@ -1,0 +1,82 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flora
+      POSTGRES_PASSWORD: flora
+      POSTGRES_DB: floratailor
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  product-service:
+    build:
+      context: ./backend/product-service
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+    depends_on:
+      - postgres
+
+  cart-service:
+    build:
+      context: ./backend/cart-service
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+    depends_on:
+      - postgres
+
+  order-service:
+    build:
+      context: ./backend/order-service
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+    depends_on:
+      - postgres
+
+  search-service:
+    build:
+      context: ./backend/search-service
+    environment:
+      PORT: 3004
+      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+    depends_on:
+      - postgres
+
+  gateway:
+    build:
+      context: ./backend/gateway
+    environment:
+      PORT: 3000
+      JWT_SECRET: super-secret-local-key
+      PRODUCT_SERVICE_URL: http://product-service:3001
+      CART_SERVICE_URL: http://cart-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+      SEARCH_SERVICE_URL: http://search-service:3004
+    depends_on:
+      - product-service
+      - cart-service
+      - order-service
+      - search-service
+    ports:
+      - '3000:3000'
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:3000
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000
+    depends_on:
+      - gateway
+    ports:
+      - '4173:4173'
+
+volumes:
+  postgres-data:
