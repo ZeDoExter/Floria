@@ -6,6 +6,8 @@ import type {
   CalculatedProductPricing,
   OrderWithItems,
   PreparedOrderItem,
+  ProductOption,
+  ProductWithOptionGroups,
   SerializedOrderDetail,
   SerializedOrderList
 } from './orders.types.js';
@@ -38,23 +40,23 @@ export class OrdersService {
   }
 
   private async calculateItem(productId: string, optionIds: string[]): Promise<CalculatedProductPricing> {
-    const product = await this.prisma.product.findUnique({
+    const product = (await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
         optionGroups: {
           include: { options: true }
         }
       }
-    });
+    })) as ProductWithOptionGroups | null;
 
     if (!product) {
       throw new NotFoundException(`Product ${productId} not found`);
     }
 
     const basePrice = new Decimal(product.basePrice);
-    const selectedOptions = product.optionGroups.flatMap((group) => group.options).filter((option) =>
-      optionIds.includes(option.id)
-    );
+    const selectedOptions: ProductOption[] = product.optionGroups
+      .flatMap((group) => group.options)
+      .filter((option): option is ProductOption => optionIds.includes(option.id));
     const modifiers = selectedOptions.reduce<Decimal>(
       (total, option) => total.add(option.priceModifier),
       new Decimal(0)

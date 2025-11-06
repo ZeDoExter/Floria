@@ -1,23 +1,44 @@
-import type { Prisma } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime/library';
 
-export type ProductWithOptionGroups = Prisma.ProductGetPayload<{
-  include: {
-    optionGroups: {
-      include: {
-        options: true;
-      };
-    };
-  };
-}>;
+export interface ProductOption {
+  id: string;
+  name: string;
+  priceModifier: Decimal;
+}
 
-export type OrderWithItems = Prisma.OrderGetPayload<{
-  include: {
-    items: true;
-  };
-}>;
+export interface ProductOptionGroup {
+  id: string;
+  name: string;
+  options: ProductOption[];
+}
 
-export type ProductOption = ProductWithOptionGroups['optionGroups'][number]['options'][number];
+export interface ProductWithOptionGroups {
+  id: string;
+  name: string;
+  basePrice: Decimal;
+  optionGroups: ProductOptionGroup[];
+}
+
+export interface OrderItemWithSnapshot {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: Decimal;
+  optionSnapshot: unknown;
+}
+
+export interface OrderWithItems {
+  id: string;
+  cognito_user_id: string;
+  totalAmount: Decimal;
+  status: string;
+  createdAt: Date;
+  notes: string | null;
+  deliveryDate: Date | null;
+  items: OrderItemWithSnapshot[];
+}
 
 export interface CalculatedProductPricing {
   product: ProductWithOptionGroups;

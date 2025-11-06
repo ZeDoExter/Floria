@@ -1,24 +1,12 @@
-import type { Prisma } from '@prisma/client';
+import type { Product, OptionGroup, Option, Cart, CartItem } from '@prisma/client';
 
-export type ProductWithOptionGroups = Prisma.ProductGetPayload<{
-  include: {
-    optionGroups: {
-      include: {
-        options: true;
-      };
-    };
-  };
-}>;
+export type ProductWithOptionGroups = Product & {
+  optionGroups?: (OptionGroup & { options?: Option[] })[];
+};
 
-export type CartWithItemsAndProduct = Prisma.CartGetPayload<{
-  include: {
-    items: {
-      include: {
-        product: true;
-      };
-    };
-  };
-}>;
+export type CartWithItemsAndProduct = Cart & {
+  items?: (CartItem & { product?: Product })[];
+};
 
 export type CartItemWithProduct = CartWithItemsAndProduct['items'][number];
 

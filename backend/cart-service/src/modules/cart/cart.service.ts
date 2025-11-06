@@ -44,8 +44,8 @@ export class CartService {
     const basePrice = new Decimal(product.basePrice);
     const modifiers = optionIds.reduce<Decimal>((total, optionId) => {
       const option = product.optionGroups
-        .flatMap((group) => group.options)
-        .find((opt) => opt.id === optionId);
+        .flatMap((group: { options: any; }) => group.options)
+        .find((opt: { id: string; }) => opt.id === optionId);
       if (!option) {
         return total;
       }
@@ -64,7 +64,7 @@ export class CartService {
       id: cart.id,
       cognito_user_id: cart.cognito_user_id,
       anonymousId: cart.anonymousId,
-      items: cart.items.map((item) => ({
+      items: cart.items.map((item: { id: any; productId: any; product: { name: any; }; quantity: any; selectedOptionIds: any; unitPrice: any; }) => ({
         id: item.id,
         productId: item.productId,
         productName: item.product.name,
@@ -226,7 +226,7 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
-    const item = cart.items.find((cartItem) => cartItem.id === itemId);
+    const item = cart.items.find((cartItem: { id: string; }) => cartItem.id === itemId);
     if (!item) {
       throw new NotFoundException('Cart item not found');
     }
@@ -255,7 +255,7 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
-    const item = cart.items.find((cartItem) => cartItem.id === itemId);
+    const item = cart.items.find((cartItem: { id: string; }) => cartItem.id === itemId);
     if (!item) {
       throw new NotFoundException('Cart item not found');
     }
