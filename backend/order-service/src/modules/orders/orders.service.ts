@@ -1,18 +1,25 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
-import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
+import type {
+  CalculatedProductPricing,
+  OrderWithItems,
+  PreparedOrderItem,
+  SerializedOrderDetail,
+  SerializedOrderList
+} from './orders.types.js';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listOrders(cognitoUserId: string | undefined) {
+  async listOrders(cognitoUserId: string | undefined): Promise<SerializedOrderList> {
     if (!cognitoUserId) {
       throw new UnauthorizedException('User authentication required');
     }
 
-    const orders = await this.prisma.order.findMany({
+    const orders: OrderWithItems[] = await this.prisma.order.findMany({
       where: { cognito_user_id: cognitoUserId },
       orderBy: { createdAt: 'desc' },
       include: { items: true }
@@ -30,7 +37,7 @@ export class OrdersService {
     };
   }
 
-  private async calculateItem(productId: string, optionIds: string[]) {
+  private async calculateItem(productId: string, optionIds: string[]): Promise<CalculatedProductPricing> {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
@@ -44,13 +51,13 @@ export class OrdersService {
       throw new NotFoundException(`Product ${productId} not found`);
     }
 
-    const basePrice = new Prisma.Decimal(product.basePrice);
+    const basePrice = new Decimal(product.basePrice);
     const selectedOptions = product.optionGroups.flatMap((group) => group.options).filter((option) =>
       optionIds.includes(option.id)
     );
-    const modifiers = selectedOptions.reduce(
+    const modifiers = selectedOptions.reduce<Decimal>(
       (total, option) => total.add(option.priceModifier),
-      new Prisma.Decimal(0)
+      new Decimal(0)
     );
     const unitPrice = basePrice.add(modifiers);
 
@@ -61,20 +68,14 @@ export class OrdersService {
     };
   }
 
-  async createOrder(cognitoUserId: string | undefined, dto: CreateOrderDto) {
+  async createOrder(cognitoUserId: string | undefined, dto: CreateOrderDto): Promise<SerializedOrderDetail> {
     if (!cognitoUserId) {
       throw new UnauthorizedException('User authentication required');
     }
 
-    const orderItems = [] as {
-      productId: string;
-      productName: string;
-      quantity: number;
-      unitPrice: Prisma.Decimal;
-      optionSnapshot: unknown;
-    }[];
+    const orderItems: PreparedOrderItem[] = [];
 
-    let total = new Prisma.Decimal(0);
+    let total = new Decimal(0);
 
     for (const item of dto.items) {
       const { product, selectedOptions, unitPrice } = await this.calculateItem(

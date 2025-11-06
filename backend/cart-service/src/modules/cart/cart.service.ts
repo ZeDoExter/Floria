@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AddItemDto, CartItemDto, MergeCartDto, UpdateItemDto } from './dto/cart-item.dto.js';
-import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { randomUUID } from 'crypto';
+import type { CartWithItemsAndProduct, SerializedCart } from './cart.types.js';
 
 @Injectable()
 export class CartService {
@@ -26,7 +27,7 @@ export class CartService {
     return cart;
   }
 
-  private async calculateUnitPrice(productId: string, optionIds: string[]) {
+  private async calculateUnitPrice(productId: string, optionIds: string[]): Promise<Decimal> {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
@@ -40,19 +41,21 @@ export class CartService {
       throw new NotFoundException('Product not found');
     }
 
-    const basePrice = new Prisma.Decimal(product.basePrice);
-    const modifiers = optionIds.reduce((total, optionId) => {
-      const option = product.optionGroups.flatMap((group) => group.options).find((opt) => opt.id === optionId);
+    const basePrice = new Decimal(product.basePrice);
+    const modifiers = optionIds.reduce<Decimal>((total, optionId) => {
+      const option = product.optionGroups
+        .flatMap((group) => group.options)
+        .find((opt) => opt.id === optionId);
       if (!option) {
         return total;
       }
       return total.add(option.priceModifier);
-    }, new Prisma.Decimal(0));
+    }, new Decimal(0));
 
     return basePrice.add(modifiers);
   }
 
-  private serializeCart(cart: Awaited<ReturnType<typeof this.getCartById>>) {
+  private serializeCart(cart: CartWithItemsAndProduct | null): SerializedCart {
     if (!cart) {
       return { items: [] };
     }
@@ -72,7 +75,7 @@ export class CartService {
     };
   }
 
-  private getCartById(cartId: string) {
+  private getCartById(cartId: string): Promise<CartWithItemsAndProduct | null> {
     return this.prisma.cart.findUnique({
       where: { id: cartId },
       include: {
@@ -85,7 +88,7 @@ export class CartService {
     });
   }
 
-  private getCartForUserId(cognitoUserId: string) {
+  private getCartForUserId(cognitoUserId: string): Promise<CartWithItemsAndProduct | null> {
     return this.prisma.cart.findFirst({
       where: { cognito_user_id: cognitoUserId },
       include: {
@@ -96,7 +99,7 @@ export class CartService {
     });
   }
 
-  private getCartForAnonymousId(anonymousId: string) {
+  private getCartForAnonymousId(anonymousId: string): Promise<CartWithItemsAndProduct | null> {
     return this.prisma.cart.findFirst({
       where: { anonymousId },
       include: {
@@ -107,7 +110,7 @@ export class CartService {
     });
   }
 
-  async getCart(cognitoUserId?: string, anonymousId?: string) {
+  async getCart(cognitoUserId?: string, anonymousId?: string): Promise<SerializedCart> {
     let cart = null;
     if (cognitoUserId) {
       cart = await this.getCartForUserId(cognitoUserId);
@@ -121,7 +124,7 @@ export class CartService {
     return this.serializeCart(cart);
   }
 
-  async mergeCart(cognitoUserId: string | undefined, payload: MergeCartDto) {
+  async mergeCart(cognitoUserId: string | undefined, payload: MergeCartDto): Promise<SerializedCart> {
     if (!cognitoUserId) {
       throw new UnauthorizedException('User authentication is required to merge carts');
     }
@@ -162,7 +165,11 @@ export class CartService {
     return this.serializeCart(updatedCart);
   }
 
-  async addItem(cognitoUserId: string | undefined, anonymousId: string | undefined, payload: AddItemDto) {
+  async addItem(
+    cognitoUserId: string | undefined,
+    anonymousId: string | undefined,
+    payload: AddItemDto
+  ): Promise<SerializedCart> {
     const targetAnonymousId = payload.anonymousId ?? anonymousId;
     const cart = cognitoUserId
       ? await this.ensureCartForUser(cognitoUserId)
@@ -207,7 +214,7 @@ export class CartService {
     anonymousId: string | undefined,
     itemId: string,
     payload: UpdateItemDto
-  ) {
+  ): Promise<SerializedCart> {
     const activeAnonymousId = payload.anonymousId ?? anonymousId;
     const cart = cognitoUserId
       ? await this.getCartForUserId(cognitoUserId)
@@ -233,7 +240,11 @@ export class CartService {
     return this.serializeCart(updatedCart);
   }
 
-  async removeItem(cognitoUserId: string | undefined, anonymousId: string | undefined, itemId: string) {
+  async removeItem(
+    cognitoUserId: string | undefined,
+    anonymousId: string | undefined,
+    itemId: string
+  ): Promise<SerializedCart> {
     const cart = cognitoUserId
       ? await this.getCartForUserId(cognitoUserId)
       : anonymousId
