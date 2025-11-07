@@ -1,9 +1,87 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchProductDetail, ProductDetail } from '../api/products';
 import { useCart } from '../context/CartContext';
 
 export const CartPage = () => {
   const { cartItems, updateQuantity, removeItem } = useCart();
   const subtotal = cartItems.reduce((total, item) => total + (item.unitPrice ?? 0) * item.quantity, 0);
+  const [productDetails, setProductDetails] = useState<Record<string, ProductDetail>>({});
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDetails = async () => {
+      const uniqueProductIds = Array.from(new Set(cartItems.map((item) => item.productId))).filter(Boolean);
+      if (uniqueProductIds.length === 0) {
+        if (isMounted) {
+          setProductDetails({});
+        }
+        return;
+      }
+
+      try {
+        const entries = await Promise.all(
+          uniqueProductIds.map(async (id) => {
+            const detail = await fetchProductDetail(id);
+            return [id, detail] as const;
+          })
+        );
+        if (!isMounted) {
+          return;
+        }
+        setProductDetails((current) => {
+          const next = { ...current };
+          for (const [id, detail] of entries) {
+            next[id] = detail;
+          }
+          return next;
+        });
+      } catch (error) {
+        console.error('Failed to load product details for cart items', error);
+      }
+    };
+
+    const guardedLoad = async () => {
+      await loadDetails();
+    };
+
+    void guardedLoad();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cartItems]);
+
+  const describeSelectedOptions = useMemo(() => {
+    return (productId: string, selectedOptionIds: string[]) => {
+      if (!selectedOptionIds.length) {
+        return 'None selected';
+      }
+
+      const detail = productDetails[productId];
+      if (!detail) {
+        return 'Loading details...';
+      }
+
+      const groupsWithSelections = detail.optionGroups
+        .map((group) => {
+          const options = group.options.filter((option) => selectedOptionIds.includes(option.id));
+          if (options.length === 0) {
+            return null;
+          }
+          const optionNames = options.map((option) => option.name).join(', ');
+          return `${group.name}: ${optionNames}`;
+        })
+        .filter((value): value is string => Boolean(value));
+
+      if (groupsWithSelections.length === 0) {
+        return 'None selected';
+      }
+
+      return groupsWithSelections.join(' | ');
+    };
+  }, [productDetails]);
 
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -25,9 +103,7 @@ export const CartPage = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                 <div>
                   <p style={{ fontWeight: 600 }}>{item.productName ?? 'Custom Bouquet'}</p>
-                  <p style={{ fontSize: 14, color: '#555' }}>
-                    Selected options: {item.selectedOptionIds.join(', ') || 'None'}
-                  </p>
+                  <p style={{ fontSize: 14, color: '#555' }}>Selected options: {describeSelectedOptions(item.productId, item.selectedOptionIds)}</p>
                 </div>
                 <button type="button" style={{ color: '#c2415c', cursor: 'pointer' }} onClick={() => removeItem(item.productId, item.selectedOptionIds)}>
                   Remove

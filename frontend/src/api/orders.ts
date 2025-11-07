@@ -23,12 +23,20 @@ export const submitOrder = async (payload: CheckoutPayload, token: string) => {
   const response = await apiClient.post('/orders', payload, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  return normalizeOrder(response.data);
+
+  const order = (response.data as { order?: unknown })?.order;
+  return normalizeOrder(order ?? response.data);
 };
 
 export const fetchOrders = async (token: string) => {
   const response = await apiClient.get('/orders', {
     headers: { Authorization: `Bearer ${token}` }
   });
-  return (response.data as any[]).map(normalizeOrder);
+
+  const orders = (response.data as { orders?: unknown })?.orders;
+  if (!Array.isArray(orders)) {
+    return [];
+  }
+
+  return orders.map(normalizeOrder);
 };

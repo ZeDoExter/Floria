@@ -10,6 +10,8 @@ export const ProductDetailPage = () => {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [groupErrors, setGroupErrors] = useState<Record<string, string | null>>({});
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -26,6 +28,12 @@ export const ProductDetailPage = () => {
         setSelectedOptions(
           data.optionGroups.reduce<Record<string, string[]>>((acc, group) => {
             acc[group.id] = [];
+            return acc;
+          }, {})
+        );
+        setGroupErrors(
+          data.optionGroups.reduce<Record<string, string | null>>((acc, group) => {
+            acc[group.id] = null;
             return acc;
           }, {})
         );
@@ -56,13 +64,30 @@ export const ProductDetailPage = () => {
     return base + modifiers;
   }, [product, selectedOptions]);
 
-  const toggleOption = (groupId: string, optionId: string) => {
+  const toggleOption = (group: ProductDetail['optionGroups'][number], optionId: string) => {
+    setFormError(null);
     setSelectedOptions((prev) => {
-      const current = prev[groupId] || [];
-      if (current.includes(optionId)) {
-        return { ...prev, [groupId]: current.filter((id) => id !== optionId) };
+      const current = prev[group.id] || [];
+      const isSelected = current.includes(optionId);
+
+      if (!isSelected && group.maxSelect > 0 && current.length >= group.maxSelect) {
+        setGroupErrors((errors) => ({
+          ...errors,
+          [group.id]: `You can select up to ${group.maxSelect} option${group.maxSelect > 1 ? 's' : ''}.`
+        }));
+        return prev;
       }
-      return { ...prev, [groupId]: [...current, optionId] };
+
+      const updatedSelection = isSelected
+        ? current.filter((id) => id !== optionId)
+        : [...current, optionId];
+
+      setGroupErrors((errors) => ({
+        ...errors,
+        [group.id]: null
+      }));
+
+      return { ...prev, [group.id]: updatedSelection };
     });
   };
 
@@ -70,6 +95,37 @@ export const ProductDetailPage = () => {
     if (!product) {
       return;
     }
+    setFormError(null);
+
+    const nextGroupErrors: Record<string, string | null> = {};
+    let hasError = false;
+
+    for (const group of product.optionGroups) {
+      const selected = selectedOptions[group.id] ?? [];
+      const requiredMin = Math.max(group.isRequired ? 1 : 0, group.minSelect ?? 0);
+
+      if (selected.length < requiredMin) {
+        hasError = true;
+        nextGroupErrors[group.id] = `Please select at least ${requiredMin} option${requiredMin > 1 ? 's' : ''} for "${group.name}".`;
+        continue;
+      }
+
+      if (group.maxSelect > 0 && selected.length > group.maxSelect) {
+        hasError = true;
+        nextGroupErrors[group.id] = `You can select up to ${group.maxSelect} option${group.maxSelect > 1 ? 's' : ''} for "${group.name}".`;
+        continue;
+      }
+
+      nextGroupErrors[group.id] = null;
+    }
+
+    if (hasError) {
+      setGroupErrors(nextGroupErrors);
+      setFormError('Please fix the highlighted option groups before adding this arrangement to your cart.');
+      return;
+    }
+
+    setGroupErrors(nextGroupErrors);
     const optionIds = Object.values(selectedOptions).flat();
     addItem({ productId: product.id, quantity: 1, selectedOptionIds: optionIds, unitPrice: price, productName: product?.name ?? "" } as any);
     navigate('/cart');
@@ -123,15 +179,17 @@ export const ProductDetailPage = () => {
                         <span style={{ fontWeight: 600 }}>{option.name}</span>
                         {option.description && <p style={{ fontSize: 12 }}>{option.description}</p>}
                       </span>
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleOption(group.id, option.id)} />
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleOption(group, option.id)} />
                     </label>
                   </li>
                 );
               })}
             </ul>
+            {groupErrors[group.id] && <p style={{ marginTop: 8, fontSize: 12, color: '#c2415c' }}>{groupErrors[group.id]}</p>}
           </div>
         ))}
       </div>
+      {formError && <p style={{ color: '#c2415c' }}>{formError}</p>}
       <button
         type="button"
         onClick={handleAddToCart}
