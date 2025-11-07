@@ -1,11 +1,19 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const ProfilePage = () => {
   const { user, login, logout, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -22,51 +30,53 @@ export const ProfilePage = () => {
 
   if (user) {
     return (
-      <section className="space-y-4">
-        <header>
-          <h1 className="text-3xl font-bold text-rose-600">Welcome back, {user.displayName}</h1>
-          <p className="text-slate-600">Manage your preferences and upcoming orders.</p>
-        </header>
-        <div className="rounded border border-rose-100 bg-white p-4">
-          <p className="text-sm text-slate-600">Signed in as {user.email}</p>
-          <button onClick={logout} className="mt-3 rounded bg-rose-500 px-4 py-2 text-sm font-semibold text-white">
-            Sign out
-          </button>
-        </div>
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <p>You are signed in as {user.email}</p>
+        <button
+          type="button"
+          onClick={logout}
+          style={{ width: 'fit-content', background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: 'pointer' }}
+        >
+          Sign out
+        </button>
       </section>
     );
   }
 
   return (
-    <section className="mx-auto max-w-sm space-y-6">
+    <section style={{ maxWidth: 360, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
       <header>
-        <h1 className="text-3xl font-bold text-rose-600">Sign in</h1>
-        <p className="text-slate-600">Access saved carts, checkout faster, and view your order history.</p>
+        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Sign in</h1>
+        <p>Access saved carts, checkout faster, and view your order history.</p>
       </header>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="block text-sm">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <label style={{ fontSize: 14 }}>
           Email
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
-            className="mt-1 w-full rounded border border-rose-100 px-3 py-2"
+            style={{ marginTop: 4, padding: '6px 8px', width: '100%' }}
           />
         </label>
-        <label className="block text-sm">
+        <label style={{ fontSize: 14 }}>
           Password
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
-            className="mt-1 w-full rounded border border-rose-100 px-3 py-2"
+            style={{ marginTop: 4, padding: '6px 8px', width: '100%' }}
           />
         </label>
-        {error && <p className="text-sm text-rose-600">{error}</p>}
-        <button type="submit" disabled={isLoading} className="w-full rounded bg-rose-500 px-6 py-2 font-semibold text-white">
-          {isLoading ? 'Signing in…' : 'Sign in'}
+        {error && <p style={{ color: '#c2415c' }}>{error}</p>}
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{ background: '#c2415c', color: '#fff', padding: '8px 16px', border: 'none', cursor: 'pointer', opacity: isLoading ? 0.6 : 1 }}
+        >
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
     </section>

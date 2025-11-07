@@ -71,7 +71,7 @@ export const ProductDetailPage = () => {
       return;
     }
     const optionIds = Object.values(selectedOptions).flat();
-    addItem({ productId: product.id, quantity: 1, selectedOptionIds: optionIds, unitPrice: price, productName: product?.name ?? "" } as any);
+    addItem({ productId: product.id, quantity: 1, selectedOptionIds: optionIds });
     navigate('/cart');
   };
 
@@ -80,7 +80,7 @@ export const ProductDetailPage = () => {
   }
 
   if (error) {
-    return <p style={{ color: '#c2415c' }}>{error}</p>;
+    return <p className="text-rose-600">{error}</p>;
   }
 
   if (!product) {
@@ -88,42 +88,35 @@ export const ProductDetailPage = () => {
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <h1 style={{ fontSize: 28, marginBottom: 6, color: '#c2415c' }}>{product.name}</h1>
-        {product.description && <p style={{ marginBottom: 6 }}>{product.description}</p>}
-        <p style={{ fontSize: 20, fontWeight: 600 }}>${price.toFixed(2)}</p>
+    <section className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-rose-600">{product.name}</h1>
+        {product.description && <p className="text-slate-600">{product.description}</p>}
+        <p className="text-xl font-semibold text-slate-700">${price.toFixed(2)}</p>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="space-y-4">
         {product.optionGroups.map((group) => (
-          <div key={group.id} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 4, color: '#c2415c' }}>{group.name}</h2>
-            {group.description && <p style={{ fontSize: 14, marginBottom: 4 }}>{group.description}</p>}
-            <p style={{ fontSize: 12, color: '#555' }}>
-              {group.isRequired ? 'Required' : 'Optional'} – select between {group.minSelect} and{' '}
-              {group.maxSelect || group.options.length}
+          <div key={group.id} className="rounded border border-rose-100 bg-white p-4">
+            <h2 className="text-lg font-semibold text-rose-600">{group.name}</h2>
+            {group.description && <p className="text-sm text-slate-600">{group.description}</p>}
+            <p className="text-xs text-slate-500">
+              {group.isRequired ? 'Required' : 'Optional'} · select between {group.minSelect} and {group.maxSelect || group.options.length}
             </p>
-            <ul style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, padding: 0 }}>
+            <ul className="mt-3 space-y-2">
               {group.options.map((option) => {
                 const isSelected = selectedOptions[group.id]?.includes(option.id);
                 return (
-                  <li key={option.id} style={{ listStyle: 'none' }}>
-                    <label
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        border: '1px solid #eee',
-                        padding: '8px 12px',
-                        background: isSelected ? '#fde4ec' : '#fafafa',
-                        cursor: 'pointer'
-                      }}
-                    >
+                  <li key={option.id}>
+                    <label className="flex cursor-pointer items-center justify-between rounded border border-rose-100 bg-rose-50 px-3 py-2">
                       <span>
-                        <span style={{ fontWeight: 600 }}>{option.name}</span>
-                        {option.description && <p style={{ fontSize: 12 }}>{option.description}</p>}
+                        <span className="font-medium text-slate-700">{option.name}</span>
+                        {option.description && <p className="text-xs text-slate-500">{option.description}</p>}
                       </span>
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleOption(group.id, option.id)} />
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleOption(group.id, option.id)}
+                      />
                     </label>
                   </li>
                 );
@@ -132,15 +125,9 @@ export const ProductDetailPage = () => {
           </div>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        style={{ background: '#c2415c', color: '#fff', padding: '8px 16px', border: 'none', cursor: 'pointer' }}
-      >
+      <button onClick={handleAddToCart} className="rounded bg-rose-500 px-6 py-2 font-semibold text-white">
         Add to cart
       </button>
     </section>
   );
 };
-
-

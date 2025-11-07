@@ -12,8 +12,19 @@ export type CartItemResponse = CartItemInput & {
   productName: string;
 };
 
+type SerializedCart = {
+  id?: string;
+  items: CartItemResponse[];
+};
+
+const normalizeCart = (cart: SerializedCart): CartItemResponse[] =>
+  cart.items.map((item) => ({
+    ...item,
+    unitPrice: Number(item.unitPrice ?? 0)
+  }));
+
 export const mergeCart = async (items: CartItemInput[], token: string) => {
-  const response = await apiClient.post<{ items: CartItemResponse[] }>(
+  const response = await apiClient.post<SerializedCart>(
     '/cart/merge',
     { items },
     {
@@ -22,12 +33,32 @@ export const mergeCart = async (items: CartItemInput[], token: string) => {
       }
     }
   );
-  return response.data.items;
+  return normalizeCart(response.data);
 };
 
 export const fetchRemoteCart = async (token: string) => {
-  const response = await apiClient.get<{ items: CartItemResponse[] }>('/cart', {
+  const response = await apiClient.get<SerializedCart>('/cart', {
     headers: { Authorization: `Bearer ${token}` }
   });
-  return response.data.items;
+  return normalizeCart(response.data);
+};
+export const addCartItem = async (token: string, item: CartItemInput) => {
+  const response = await apiClient.post<SerializedCart>('/cart/items', item, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return normalizeCart(response.data);
+};
+
+export const updateCartItemQuantity = async (token: string, id: string, quantity: number) => {
+  const response = await apiClient.put<SerializedCart>(`/cart/items/${id}`, { quantity }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return normalizeCart(response.data);
+};
+
+export const removeCartItem = async (token: string, id: string) => {
+  const response = await apiClient.delete<SerializedCart>(`/cart/items/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return normalizeCart(response.data);
 };

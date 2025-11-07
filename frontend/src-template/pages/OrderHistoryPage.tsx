@@ -36,26 +36,26 @@ export const OrderHistoryPage = () => {
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <section className="space-y-6">
       <header>
-        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Order history</h1>
-        <p>Track your previous bespoke creations.</p>
+        <h1 className="text-3xl font-bold text-rose-600">Order history</h1>
+        <p className="text-slate-600">Track your previous bespoke creations.</p>
       </header>
       {isLoading && <p>Loading orders...</p>}
-      {error && <p style={{ color: '#c2415c' }}>{error}</p>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {error && <p className="text-rose-600">{error}</p>}
+      <div className="space-y-4">
         {orders.length === 0 ? (
-          <p style={{ fontSize: 14, color: '#555' }}>You have not placed any orders yet.</p>
+          <p className="text-sm text-slate-500">You have not placed any orders yet.</p>
         ) : (
           orders.map((order) => (
-            <article key={order.id} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <p style={{ fontWeight: 600 }}>Order #{order.id}</p>
-                <p style={{ fontSize: 14, color: '#555' }}>{new Date(order.createdAt).toLocaleString()}</p>
+            <article key={order.id} className="rounded border border-rose-100 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-slate-700">Order #{order.id}</p>
+                <p className="text-sm text-slate-500">{new Date(order.createdAt).toLocaleString()}</p>
               </div>
-              <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 14, color: '#555' }}>Status: {order.status}</span>
-                <span style={{ fontSize: 18, fontWeight: 600, color: '#c2415c' }}>${order.totalAmount.toFixed(2)}</span>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm text-slate-500">Status: {order.status}</span>
+                <span className="text-lg font-semibold text-rose-600">${order.totalAmount.toFixed(2)}</span>
               </div>
             </article>
           ))

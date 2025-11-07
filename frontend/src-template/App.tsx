@@ -9,9 +9,9 @@ import { NavBar } from './components/NavBar';
 
 function App() {
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f5f5', color: '#1f1f1f' }}>
+    <div className="min-h-screen bg-rose-50 text-slate-900">
       <NavBar />
-      <main style={{ margin: '0 auto', maxWidth: 960, padding: 24 }}>
+      <main className="mx-auto max-w-5xl p-6">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/products/:productId" element={<ProductDetailPage />} />

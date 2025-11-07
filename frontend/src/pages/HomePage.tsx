@@ -26,25 +26,29 @@ export const HomePage = () => {
   }, []);
 
   return (
-    <section className="space-y-6">
-      <header className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold text-rose-600">Design your perfect bouquet</h1>
-        <p className="text-slate-600">
-          Discover bespoke floral arrangements with customizable options for every occasion.
-        </p>
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <header style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: 28, marginBottom: 8, color: '#c2415c' }}>Design your perfect bouquet</h1>
+        <p>Discover bespoke floral arrangements with customizable options for every occasion.</p>
       </header>
-      {isLoading && <p className="text-center text-slate-500">Loading fresh blooms...</p>}
-      {error && <p className="text-center text-rose-600">{error}</p>}
-      <div className="grid gap-6 sm:grid-cols-2">
+      {isLoading && <p style={{ textAlign: 'center' }}>Loading fresh blooms...</p>}
+      {error && <p style={{ textAlign: 'center', color: '#c2415c' }}>{error}</p>}
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
         {products.map((product) => (
           <Link
             key={product.id}
             to={`/products/${product.id}`}
-            className="rounded-lg border border-rose-100 bg-white p-4 shadow-sm transition hover:shadow-md"
+            style={{
+              border: '1px solid #eee',
+              padding: 16,
+              background: '#fff',
+              textDecoration: 'none',
+              color: '#222'
+            }}
           >
-            <h2 className="text-xl font-semibold text-rose-600">{product.name}</h2>
-            {product.description && <p className="mt-2 text-sm text-slate-600">{product.description}</p>}
-            <p className="mt-4 text-sm font-medium text-slate-700">From ${product.basePrice.toFixed(2)}</p>
+            <h2 style={{ fontSize: 18, marginBottom: 8, color: '#c2415c' }}>{product.name}</h2>
+            {product.description && <p style={{ fontSize: 14, marginBottom: 8 }}>{product.description}</p>}
+            <p style={{ fontSize: 14, fontWeight: 600 }}>From ${product.basePrice.toFixed(2)}</p>
           </Link>
         ))}
       </div>

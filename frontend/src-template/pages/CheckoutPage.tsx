@@ -46,33 +46,37 @@ export const CheckoutPage = () => {
   };
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <section className="space-y-6">
       <header>
-        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Checkout</h1>
-        <p>Provide delivery preferences for your bespoke bouquet.</p>
+        <h1 className="text-3xl font-bold text-rose-600">Checkout</h1>
+        <p className="text-slate-600">Provide delivery preferences for your bespoke bouquet.</p>
       </header>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label style={{ fontSize: 14 }}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <label className="block text-sm">
           Delivery date
           <input
             type="date"
             value={deliveryDate}
             onChange={(event) => setDeliveryDate(event.target.value)}
-            style={{ marginTop: 4, padding: '6px 8px', width: '100%' }}
+            className="mt-1 w-full rounded border border-rose-100 px-3 py-2"
           />
         </label>
-        <label style={{ fontSize: 14 }}>
+        <label className="block text-sm">
           Notes for our florists
           <textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Tell us about the event, preferred colors, or allergens..."
-            style={{ marginTop: 4, padding: '6px 8px', width: '100%' }}
+            className="mt-1 w-full rounded border border-rose-100 px-3 py-2"
             rows={4}
           />
         </label>
-        {error && <p style={{ color: '#c2415c' }}>{error}</p>}
-        <button type="submit" disabled={isSubmitting || cartItems.length === 0} style={{ background: '#c2415c', color: '#fff', padding: '8px 16px', border: 'none', cursor: 'pointer', opacity: isSubmitting || cartItems.length === 0 ? 0.6 : 1 }}>
+        {error && <p className="text-sm text-rose-600">{error}</p>}
+        <button
+          type="submit"
+          disabled={isSubmitting || cartItems.length === 0}
+          className="rounded bg-rose-500 px-6 py-2 font-semibold text-white disabled:opacity-50"
+        >
           {isSubmitting ? 'Placing order...' : 'Place order'}
         </button>
       </form>

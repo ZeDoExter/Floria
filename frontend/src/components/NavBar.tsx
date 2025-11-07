@@ -7,28 +7,33 @@ export const NavBar = () => {
   const { user, logout } = useAuth();
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
+  const linkStyle = (active: boolean) => ({
+    color: active ? '#c2415c' : '#444',
+    textDecoration: 'none'
+  });
+
   return (
-    <header className="bg-white shadow-sm">
-      <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
-        <Link to="/" className="text-xl font-semibold text-rose-600">
+    <header style={{ background: '#fff', borderBottom: '1px solid #eee' }}>
+      <div style={{ margin: '0 auto', maxWidth: 960, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link to="/" style={{ fontSize: 18, fontWeight: 600, color: '#c2415c', textDecoration: 'none' }}>
           Flora Tailor
         </Link>
-        <nav className="flex items-center gap-4 text-sm font-medium">
-          <NavLink to="/" className={({ isActive }) => (isActive ? 'text-rose-600' : 'text-slate-700')}>
+        <nav style={{ display: 'flex', gap: 16, fontSize: 14 }}>
+          <NavLink to="/" style={({ isActive }) => linkStyle(isActive)}>
             Home
           </NavLink>
-          <NavLink to="/orders" className={({ isActive }) => (isActive ? 'text-rose-600' : 'text-slate-700')}>
+          <NavLink to="/orders" style={({ isActive }) => linkStyle(isActive)}>
             Orders
           </NavLink>
-          <NavLink to="/cart" className={({ isActive }) => (isActive ? 'text-rose-600' : 'text-slate-700')}>
+          <NavLink to="/cart" style={({ isActive }) => linkStyle(isActive)}>
             Cart ({itemCount})
           </NavLink>
           {user ? (
-            <button onClick={logout} className="rounded bg-rose-500 px-3 py-1 text-white">
+            <button type="button" onClick={logout} style={{ border: '1px solid #c2415c', background: '#c2415c', color: '#fff', padding: '4px 12px', cursor: 'pointer' }}>
               Logout
             </button>
           ) : (
-            <NavLink to="/profile" className={({ isActive }) => (isActive ? 'text-rose-600' : 'text-slate-700')}>
+            <NavLink to="/profile" style={({ isActive }) => linkStyle(isActive)}>
               Login
             </NavLink>
           )}

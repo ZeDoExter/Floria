@@ -14,21 +14,20 @@ export type OrderResponse = {
   createdAt: string;
 };
 
-const normalizeOrder = (order: any): OrderResponse => ({
-  ...order,
-  totalAmount: Number(order.totalAmount ?? 0)
-});
-
 export const submitOrder = async (payload: CheckoutPayload, token: string) => {
-  const response = await apiClient.post('/orders', payload, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return normalizeOrder(response.data);
+  const response = await apiClient.post<{ order: OrderResponse }>(
+    '/orders',
+    payload,
+    {
+      headers: { Authorization: `Bearer ${token}` }
+    }
+  );
+  return response.data.order;
 };
 
 export const fetchOrders = async (token: string) => {
-  const response = await apiClient.get('/orders', {
+  const response = await apiClient.get<{ orders: OrderResponse[] }>('/orders', {
     headers: { Authorization: `Bearer ${token}` }
   });
-  return (response.data as any[]).map(normalizeOrder);
+  return response.data.orders;
 };
