@@ -3,7 +3,14 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { AddItemDto, CartItemDto, MergeCartDto, UpdateItemDto } from './dto/cart-item.dto.js';
 import { Decimal } from '@prisma/client/runtime/library';
 import { randomUUID } from 'crypto';
-import type { CartWithItemsAndProduct, SerializedCart } from './cart.types.js';
+import type {
+  CartItemWithProduct,
+  CartWithItemsAndProduct,
+  OptionGroupWithOptions,
+  ProductOption,
+  ProductWithOptionGroups,
+  SerializedCart
+} from './cart.types.js';
 
 @Injectable()
 export class CartService {
@@ -28,29 +35,34 @@ export class CartService {
   }
 
   private async calculateUnitPrice(productId: string, optionIds: string[]): Promise<Decimal> {
-    const product = await this.prisma.product.findUnique({
+    const product = (await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
         optionGroups: {
           include: { options: true }
         }
       }
-    });
+    })) as ProductWithOptionGroups | null;
 
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
+    const optionGroups: OptionGroupWithOptions[] = product.optionGroups ?? [];
     const basePrice = new Decimal(product.basePrice);
-    const modifiers = optionIds.reduce<Decimal>((total, optionId) => {
-      const option = product.optionGroups
-        .flatMap((group: { options: any; }) => group.options)
-        .find((opt: { id: string; }) => opt.id === optionId);
-      if (!option) {
-        return total;
+
+    let modifiers = new Decimal(0);
+    for (const optionId of optionIds) {
+      for (const group of optionGroups) {
+        const option = (group.options ?? []).find(
+          (opt: ProductOption) => opt.id === optionId
+        );
+        if (option) {
+          modifiers = modifiers.add(option.priceModifier);
+          break;
+        }
       }
-      return total.add(option.priceModifier);
-    }, new Decimal(0));
+    }
 
     return basePrice.add(modifiers);
   }
@@ -64,7 +76,7 @@ export class CartService {
       id: cart.id,
       cognito_user_id: cart.cognito_user_id,
       anonymousId: cart.anonymousId,
-      items: cart.items.map((item: { id: any; productId: any; product: { name: any; }; quantity: any; selectedOptionIds: any; unitPrice: any; }) => ({
+      items: (cart.items ?? []).map((item: CartItemWithProduct) => ({
         id: item.id,
         productId: item.productId,
         productName: item.product.name,
@@ -85,7 +97,7 @@ export class CartService {
           }
         }
       }
-    });
+    }) as Promise<CartWithItemsAndProduct | null>;
   }
 
   private getCartForUserId(cognitoUserId: string): Promise<CartWithItemsAndProduct | null> {
@@ -96,7 +108,7 @@ export class CartService {
           include: { product: true }
         }
       }
-    });
+    }) as Promise<CartWithItemsAndProduct | null>;
   }
 
   private getCartForAnonymousId(anonymousId: string): Promise<CartWithItemsAndProduct | null> {
@@ -107,7 +119,7 @@ export class CartService {
           include: { product: true }
         }
       }
-    });
+    }) as Promise<CartWithItemsAndProduct | null>;
   }
 
   async getCart(cognitoUserId?: string, anonymousId?: string): Promise<SerializedCart> {
@@ -135,7 +147,7 @@ export class CartService {
     if (payload.anonymousId) {
       const anonymousCart = await this.getCartForAnonymousId(payload.anonymousId);
       if (anonymousCart) {
-        for (const item of anonymousCart.items) {
+        for (const item of anonymousCart.items ?? []) {
           itemsToMerge.push({
             productId: item.productId,
             quantity: item.quantity,
@@ -226,7 +238,9 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
-    const item = cart.items.find((cartItem: { id: string; }) => cartItem.id === itemId);
+    const item = (cart.items ?? []).find(
+      (cartItem: CartItemWithProduct) => cartItem.id === itemId
+    );
     if (!item) {
       throw new NotFoundException('Cart item not found');
     }
@@ -255,7 +269,9 @@ export class CartService {
       throw new NotFoundException('Cart not found');
     }
 
-    const item = cart.items.find((cartItem: { id: string; }) => cartItem.id === itemId);
+    const item = (cart.items ?? []).find(
+      (cartItem: CartItemWithProduct) => cartItem.id === itemId
+    );
     if (!item) {
       throw new NotFoundException('Cart item not found');
     }
