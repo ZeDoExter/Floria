@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchProductDetail, ProductDetail } from '../api/products';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { canPlaceOrders } from '../utils/auth';
 
 export const ProductDetailPage = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -13,6 +15,8 @@ export const ProductDetailPage = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [groupErrors, setGroupErrors] = useState<Record<string, string | null>>({});
   const { addItem } = useCart();
+  const { user } = useAuth();
+  const canOrder = user ? canPlaceOrders(user.role) : true;
 
   useEffect(() => {
     if (!productId) {
@@ -96,6 +100,11 @@ export const ProductDetailPage = () => {
       return;
     }
     setFormError(null);
+
+    if (!canOrder) {
+      setFormError('Store owners cannot place orders from their own catalog.');
+      return;
+    }
 
     const nextGroupErrors: Record<string, string | null> = {};
     let hasError = false;
@@ -190,10 +199,19 @@ export const ProductDetailPage = () => {
         ))}
       </div>
       {formError && <p style={{ color: '#c2415c' }}>{formError}</p>}
+      {!canOrder && <p style={{ color: '#c2415c' }}>Store owners can manage products but cannot purchase from their own shop.</p>}
       <button
         type="button"
         onClick={handleAddToCart}
-        style={{ background: '#c2415c', color: '#fff', padding: '8px 16px', border: 'none', cursor: 'pointer' }}
+        disabled={!canOrder}
+        style={{
+          background: '#c2415c',
+          color: '#fff',
+          padding: '8px 16px',
+          border: 'none',
+          cursor: !canOrder ? 'not-allowed' : 'pointer',
+          opacity: !canOrder ? 0.6 : 1
+        }}
       >
         Add to cart
       </button>

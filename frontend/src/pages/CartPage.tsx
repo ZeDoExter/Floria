@@ -2,11 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProductDetail, ProductDetail } from '../api/products';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { canPlaceOrders } from '../utils/auth';
 
 export const CartPage = () => {
   const { cartItems, updateQuantity, removeItem } = useCart();
   const subtotal = cartItems.reduce((total, item) => total + (item.unitPrice ?? 0) * item.quantity, 0);
   const [productDetails, setProductDetails] = useState<Record<string, ProductDetail>>({});
+  const { user } = useAuth();
+  const canOrder = user ? canPlaceOrders(user.role) : true;
 
   useEffect(() => {
     let isMounted = true;
@@ -128,19 +132,25 @@ export const CartPage = () => {
             <p style={{ fontSize: 18, fontWeight: 600 }}>Subtotal</p>
             <p style={{ fontSize: 18, fontWeight: 600, color: '#c2415c' }}>${subtotal.toFixed(2)}</p>
           </div>
-          <Link
-            to="/checkout"
-            style={{
-              display: 'inline-block',
-              textAlign: 'center',
-              background: '#c2415c',
-              color: '#fff',
-              padding: '8px 16px',
-              textDecoration: 'none'
-            }}
-          >
-            Proceed to checkout
-          </Link>
+          {canOrder ? (
+            <Link
+              to="/checkout"
+              style={{
+                display: 'inline-block',
+                textAlign: 'center',
+                background: '#c2415c',
+                color: '#fff',
+                padding: '8px 16px',
+                textDecoration: 'none'
+              }}
+            >
+              Proceed to checkout
+            </Link>
+          ) : (
+            <p style={{ color: '#c2415c', fontSize: 14 }}>
+              Store owners cannot proceed to checkout. Switch to a customer account to place an order.
+            </p>
+          )}
         </div>
       )}
     </section>

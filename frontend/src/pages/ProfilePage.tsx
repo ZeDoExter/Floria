@@ -32,6 +32,12 @@ export const ProfilePage = () => {
     return (
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <p>You are signed in as {user.email}</p>
+        <p style={{ fontSize: 14, color: '#555' }}>Current role: {user.role}</p>
+        {user.role === 'owner' && (
+          <p style={{ fontSize: 13, color: '#c2415c' }}>
+            Store owners have full catalog control but cannot place orders from this storefront.
+          </p>
+        )}
         <button
           type="button"
           onClick={logout}

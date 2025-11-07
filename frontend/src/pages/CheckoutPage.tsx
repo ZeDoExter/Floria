@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { submitOrder } from '../api/orders';
+import { canPlaceOrders } from '../utils/auth';
 
 export const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -18,10 +19,26 @@ export const CheckoutPage = () => {
     return <p>Please log in to complete your purchase.</p>;
   }
 
+  const canOrder = canPlaceOrders(user.role);
+
+  if (!canOrder) {
+    return (
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Checkout</h1>
+        <p>Store owners manage customer orders but cannot place new orders from this storefront.</p>
+      </section>
+    );
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
+    if (!canOrder) {
+      setError('Store owners cannot place orders from their own store.');
+      setIsSubmitting(false);
+      return;
+    }
     try {
       await submitOrder(
         {

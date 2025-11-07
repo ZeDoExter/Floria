@@ -1,13 +1,13 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { isAdminEmail } from '../utils/auth';
+import { hasDashboardAccess } from '../utils/auth';
 
 export const NavBar = () => {
   const { cartItems } = useCart();
   const { user, logout } = useAuth();
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const isAdmin = isAdminEmail(user?.email);
+  const canAccessDashboard = user ? hasDashboardAccess(user.role) : false;
 
   const linkStyle = (active: boolean) => ({
     color: active ? '#c2415c' : '#444',
@@ -30,7 +30,7 @@ export const NavBar = () => {
           <NavLink to="/cart" style={({ isActive }) => linkStyle(isActive)}>
             Cart ({itemCount})
           </NavLink>
-          {isAdmin && (
+          {canAccessDashboard && (
             <>
               <NavLink to="/admin/catalog" style={({ isActive }) => linkStyle(isActive)}>
                 Admin

@@ -11,7 +11,7 @@ import {
 } from '../api/catalog';
 import { fetchProductDetail, fetchProducts, ProductDetail } from '../api/products';
 import { useAuth } from '../context/AuthContext';
-import { isAdminEmail } from '../utils/auth';
+import { canManageCatalog, hasDashboardAccess } from '../utils/auth';
 
 const SECTION_KEYS = ['categories', 'products', 'option-groups', 'options'] as const;
 type SectionKey = (typeof SECTION_KEYS)[number];
@@ -92,6 +92,10 @@ export const AdminCatalogPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]);
 
+  const role = user?.role ?? 'customer';
+  const canViewCatalog = hasDashboardAccess(role);
+  const canManage = canManageCatalog(role);
+
   const optionGroups = useMemo(() => {
     return products.flatMap((product) =>
       product.optionGroups.map((group) => ({
@@ -102,20 +106,25 @@ export const AdminCatalogPage = () => {
     );
   }, [products]);
 
-  if (!isAdminEmail(user?.email)) {
+  if (!canViewCatalog) {
     return (
       <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Admin catalog</h1>
-        <p>You need an administrator account to view and manage the catalog.</p>
+        <p>You need an administrator or store owner account to view the catalog dashboard.</p>
       </section>
     );
   }
 
   const authToken = user?.token;
+  const disableCatalogActions = !canManage;
 
   const handleCreateCategory = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCategoryFeedback(null);
+    if (disableCatalogActions) {
+      setCategoryFeedback({ status: 'error', message: 'You do not have permission to create categories.' });
+      return;
+    }
     try {
       await createCategory(
         {
@@ -136,6 +145,10 @@ export const AdminCatalogPage = () => {
   const handleCreateProduct = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setProductFeedback(null);
+    if (disableCatalogActions) {
+      setProductFeedback({ status: 'error', message: 'You do not have permission to create products.' });
+      return;
+    }
     try {
       await createProduct(
         {
@@ -159,6 +172,10 @@ export const AdminCatalogPage = () => {
   const handleCreateOptionGroup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setOptionGroupFeedback(null);
+    if (disableCatalogActions) {
+      setOptionGroupFeedback({ status: 'error', message: 'You do not have permission to create option groups.' });
+      return;
+    }
     try {
       const payload: CreateOptionGroupInput = {
         productId: optionGroupForm.productId,
@@ -181,6 +198,10 @@ export const AdminCatalogPage = () => {
   const handleCreateOption = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setOptionFeedback(null);
+    if (disableCatalogActions) {
+      setOptionFeedback({ status: 'error', message: 'You do not have permission to create options.' });
+      return;
+    }
     try {
       await createOption(
         {
@@ -208,6 +229,20 @@ export const AdminCatalogPage = () => {
         {isLoading && <p style={{ color: '#c2415c' }}>Loading catalog data…</p>}
         {error && <p style={{ color: '#c2415c' }}>{error}</p>}
       </header>
+      {disableCatalogActions && (
+        <p
+          style={{
+            background: '#fff5f8',
+            border: '1px solid #f6c4d5',
+            color: '#8e2945',
+            padding: '12px 16px',
+            borderRadius: 4
+          }}
+        >
+          You are signed in with read-only administrator access. The store owner account must be used to create or edit catalog
+          entries.
+        </p>
+      )}
 
       <section ref={sectionRefs.categories} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
         <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Categories</h2>
@@ -220,32 +255,37 @@ export const AdminCatalogPage = () => {
           ))}
           {categories.length === 0 && <li>No categories found.</li>}
         </ul>
-        <form onSubmit={handleCreateCategory} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label style={{ fontSize: 14 }}>
-            Name
-            <input
-              type="text"
-              value={categoryForm.name}
-              onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14 }}>
-            Description
-            <textarea
-              value={categoryForm.description}
-              onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
-              rows={2}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <button type="submit" style={{ alignSelf: 'flex-start', background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: 'pointer' }}>
-            Create category
-          </button>
-          {categoryFeedback && (
-            <p style={{ color: categoryFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{categoryFeedback.message}</p>
-          )}
+        <form onSubmit={handleCreateCategory}>
+          <fieldset
+            disabled={disableCatalogActions}
+            style={{ display: 'flex', flexDirection: 'column', gap: 8, border: 'none', padding: 0, margin: 0 }}
+          >
+            <label style={{ fontSize: 14 }}>
+              Name
+              <input
+                type="text"
+                value={categoryForm.name}
+                onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14 }}>
+              Description
+              <textarea
+                value={categoryForm.description}
+                onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
+                rows={2}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <button type="submit" style={{ alignSelf: 'flex-start', background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer' }}>
+              Create category
+            </button>
+            {categoryFeedback && (
+              <p style={{ color: categoryFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{categoryFeedback.message}</p>
+            )}
+          </fieldset>
         </form>
       </section>
 
@@ -259,69 +299,74 @@ export const AdminCatalogPage = () => {
           ))}
           {products.length === 0 && <li>No products found.</li>}
         </ul>
-        <form onSubmit={handleCreateProduct} style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Name
-            <input
-              type="text"
-              value={productForm.name}
-              onChange={(event) => setProductForm((current) => ({ ...current, name: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Base price
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={productForm.basePrice}
-              onChange={(event) => setProductForm((current) => ({ ...current, basePrice: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Category
-            <select
-              value={productForm.categoryId}
-              onChange={(event) => setProductForm((current) => ({ ...current, categoryId: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            >
-              <option value="">Select a category…</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
-            Description
-            <textarea
-              value={productForm.description}
-              onChange={(event) => setProductForm((current) => ({ ...current, description: event.target.value }))}
-              rows={2}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
-            Image URL
-            <input
-              type="url"
-              value={productForm.imageUrl}
-              onChange={(event) => setProductForm((current) => ({ ...current, imageUrl: event.target.value }))}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <button
-            type="submit"
-            style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: 'pointer', justifySelf: 'flex-start' }}
+        <form onSubmit={handleCreateProduct}>
+          <fieldset
+            disabled={disableCatalogActions}
+            style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', border: 'none', padding: 0, margin: 0 }}
           >
-            Create product
-          </button>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Name
+              <input
+                type="text"
+                value={productForm.name}
+                onChange={(event) => setProductForm((current) => ({ ...current, name: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Base price
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={productForm.basePrice}
+                onChange={(event) => setProductForm((current) => ({ ...current, basePrice: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Category
+              <select
+                value={productForm.categoryId}
+                onChange={(event) => setProductForm((current) => ({ ...current, categoryId: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              >
+                <option value="">Select a category…</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
+              Description
+              <textarea
+                value={productForm.description}
+                onChange={(event) => setProductForm((current) => ({ ...current, description: event.target.value }))}
+                rows={2}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
+              Image URL
+              <input
+                type="url"
+                value={productForm.imageUrl}
+                onChange={(event) => setProductForm((current) => ({ ...current, imageUrl: event.target.value }))}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <button
+              type="submit"
+              style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer', justifySelf: 'flex-start' }}
+            >
+              Create product
+            </button>
+          </fieldset>
         </form>
         {productFeedback && (
           <p style={{ marginTop: 8, color: productFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{productFeedback.message}</p>
@@ -344,76 +389,81 @@ export const AdminCatalogPage = () => {
           </div>
         ))}
         {products.length === 0 && <p>No products available yet.</p>}
-        <form onSubmit={handleCreateOptionGroup} style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Product
-            <select
-              value={optionGroupForm.productId}
-              onChange={(event) => setOptionGroupForm((current) => ({ ...current, productId: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            >
-              <option value="">Select a product…</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Name
-            <input
-              type="text"
-              value={optionGroupForm.name}
-              onChange={(event) => setOptionGroupForm((current) => ({ ...current, name: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Minimum selections
-            <input
-              type="number"
-              min="0"
-              value={optionGroupForm.minSelect}
-              onChange={(event) => setOptionGroupForm((current) => ({ ...current, minSelect: event.target.value }))}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Maximum selections (0 for unlimited)
-            <input
-              type="number"
-              min="0"
-              value={optionGroupForm.maxSelect}
-              onChange={(event) => setOptionGroupForm((current) => ({ ...current, maxSelect: event.target.value }))}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Description
-            <textarea
-              value={optionGroupForm.description}
-              onChange={(event) => setOptionGroupForm((current) => ({ ...current, description: event.target.value }))}
-              rows={2}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, alignSelf: 'center', display: 'flex', gap: 8, marginTop: 24 }}>
-            <input
-              type="checkbox"
-              checked={optionGroupForm.isRequired}
-              onChange={(event) => setOptionGroupForm((current) => ({ ...current, isRequired: event.target.checked }))}
-            />
-            Required group
-          </label>
-          <button
-            type="submit"
-            style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: 'pointer', justifySelf: 'flex-start' }}
+        <form onSubmit={handleCreateOptionGroup}>
+          <fieldset
+            disabled={disableCatalogActions}
+            style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', border: 'none', padding: 0, margin: 0 }}
           >
-            Create option group
-          </button>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Product
+              <select
+                value={optionGroupForm.productId}
+                onChange={(event) => setOptionGroupForm((current) => ({ ...current, productId: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              >
+                <option value="">Select a product…</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Name
+              <input
+                type="text"
+                value={optionGroupForm.name}
+                onChange={(event) => setOptionGroupForm((current) => ({ ...current, name: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Minimum selections
+              <input
+                type="number"
+                min="0"
+                value={optionGroupForm.minSelect}
+                onChange={(event) => setOptionGroupForm((current) => ({ ...current, minSelect: event.target.value }))}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Maximum selections (0 for unlimited)
+              <input
+                type="number"
+                min="0"
+                value={optionGroupForm.maxSelect}
+                onChange={(event) => setOptionGroupForm((current) => ({ ...current, maxSelect: event.target.value }))}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Description
+              <textarea
+                value={optionGroupForm.description}
+                onChange={(event) => setOptionGroupForm((current) => ({ ...current, description: event.target.value }))}
+                rows={2}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, alignSelf: 'center', display: 'flex', gap: 8, marginTop: 24 }}>
+              <input
+                type="checkbox"
+                checked={optionGroupForm.isRequired}
+                onChange={(event) => setOptionGroupForm((current) => ({ ...current, isRequired: event.target.checked }))}
+              />
+              Required group
+            </label>
+            <button
+              type="submit"
+              style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer', justifySelf: 'flex-start' }}
+            >
+              Create option group
+            </button>
+          </fieldset>
         </form>
         {optionGroupFeedback && (
           <p style={{ marginTop: 8, color: optionGroupFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{optionGroupFeedback.message}</p>
@@ -442,58 +492,63 @@ export const AdminCatalogPage = () => {
           </div>
         ))}
         {products.length === 0 && <p>No products available yet.</p>}
-        <form onSubmit={handleCreateOption} style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Option group
-            <select
-              value={optionForm.optionGroupId}
-              onChange={(event) => setOptionForm((current) => ({ ...current, optionGroupId: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            >
-              <option value="">Select an option group…</option>
-              {optionGroups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.productName} – {group.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Name
-            <input
-              type="text"
-              value={optionForm.name}
-              onChange={(event) => setOptionForm((current) => ({ ...current, name: event.target.value }))}
-              required
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-            Price modifier
-            <input
-              type="number"
-              step="0.01"
-              value={optionForm.priceModifier}
-              onChange={(event) => setOptionForm((current) => ({ ...current, priceModifier: event.target.value }))}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
-            Description
-            <textarea
-              value={optionForm.description}
-              onChange={(event) => setOptionForm((current) => ({ ...current, description: event.target.value }))}
-              rows={2}
-              style={{ marginTop: 4, padding: '6px 8px' }}
-            />
-          </label>
-          <button
-            type="submit"
-            style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: 'pointer', justifySelf: 'flex-start' }}
+        <form onSubmit={handleCreateOption}>
+          <fieldset
+            disabled={disableCatalogActions}
+            style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', border: 'none', padding: 0, margin: 0 }}
           >
-            Create option
-          </button>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Option group
+              <select
+                value={optionForm.optionGroupId}
+                onChange={(event) => setOptionForm((current) => ({ ...current, optionGroupId: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              >
+                <option value="">Select an option group…</option>
+                {optionGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.productName} – {group.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Name
+              <input
+                type="text"
+                value={optionForm.name}
+                onChange={(event) => setOptionForm((current) => ({ ...current, name: event.target.value }))}
+                required
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Price modifier
+              <input
+                type="number"
+                step="0.01"
+                value={optionForm.priceModifier}
+                onChange={(event) => setOptionForm((current) => ({ ...current, priceModifier: event.target.value }))}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
+              Description
+              <textarea
+                value={optionForm.description}
+                onChange={(event) => setOptionForm((current) => ({ ...current, description: event.target.value }))}
+                rows={2}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              />
+            </label>
+            <button
+              type="submit"
+              style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer', justifySelf: 'flex-start' }}
+            >
+              Create option
+            </button>
+          </fieldset>
         </form>
         {optionFeedback && (
           <p style={{ marginTop: 8, color: optionFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{optionFeedback.message}</p>
