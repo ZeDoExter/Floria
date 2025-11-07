@@ -69,6 +69,8 @@ export interface SerializedOrderList {
     createdAt: Date;
     notes: string | null;
     deliveryDate: Date | null;
+    customerId?: string;
+    customerEmail?: string | null;
   }>;
 }
 

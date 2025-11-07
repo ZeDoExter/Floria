@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { mergeCart, CartItemInput, addCartItem, updateCartItemQuantity, removeCartItem } from "../api/cart";
 import { useAuth } from "./AuthContext";
+import { canPlaceOrders } from "../utils/auth";
 
 type CartItem = CartItemInput & {
   id?: string;
@@ -25,6 +26,7 @@ const optsKey = (productId: string, selectedOptionIds: string[]) =>
 export const CartProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { user } = useAuth();
+  const latestCartRef = useRef<CartItem[]>([]);
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_CART_KEY);
@@ -40,15 +42,33 @@ export const CartProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   }, []);
 
   useEffect(() => {
+    latestCartRef.current = cartItems;
     localStorage.setItem(LOCAL_CART_KEY, JSON.stringify(cartItems));
   }, [cartItems]);
 
   useEffect(() => {
     const syncCart = async () => {
       if (!user) return;
+
+      if (!canPlaceOrders(user.role)) {
+        if (latestCartRef.current.length > 0) {
+          setCartItems([]);
+        }
+        localStorage.removeItem(LOCAL_CART_KEY);
+        try {
+          await mergeCart([], user.token);
+        } catch (error) {
+          console.error("Failed to clear remote cart for store owners", error);
+        }
+        return;
+      }
       try {
         const merged = await mergeCart(
-          cartItems.map(({ productId, quantity, selectedOptionIds }) => ({ productId, quantity, selectedOptionIds })),
+          latestCartRef.current.map(({ productId, quantity, selectedOptionIds }) => ({
+            productId,
+            quantity,
+            selectedOptionIds
+          })),
           user.token
         );
         setCartItems(merged);
@@ -58,9 +78,13 @@ export const CartProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     };
     void syncCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.token]);
+  }, [user?.token, user?.role]);
 
   const addItem = async (item: CartItem) => {
+    if (user && !canPlaceOrders(user.role)) {
+      console.warn("Store owners cannot add items to the cart.");
+      return;
+    }
     if (user) {
       try {
         const updated = await addCartItem(user.token, {

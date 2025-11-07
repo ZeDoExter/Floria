@@ -11,6 +11,28 @@ services:
       - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - floratailor-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: flora.admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: flora
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - '5050:80'
+    volumes:
+      - ./pgadmin/servers.json:/pgadmin4/servers.json
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - floratailor-network
+    depends_on:
+      postgres:
+        condition: service_started
 
   product-service:
     build:
@@ -20,6 +42,8 @@ services:
       DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
     depends_on:
       - postgres
+    networks:
+      - floratailor-network
 
   cart-service:
     build:
@@ -29,6 +53,8 @@ services:
       DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
     depends_on:
       - postgres
+    networks:
+      - floratailor-network
 
   order-service:
     build:
@@ -38,6 +64,8 @@ services:
       DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
     depends_on:
       - postgres
+    networks:
+      - floratailor-network
 
   search-service:
     build:
@@ -47,6 +75,8 @@ services:
       DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
     depends_on:
       - postgres
+    networks:
+      - floratailor-network
 
   gateway:
     build:
@@ -65,6 +95,8 @@ services:
       - search-service
     ports:
       - '3000:3000'
+    networks:
+      - floratailor-network
 
   frontend:
     build:
@@ -77,6 +109,13 @@ services:
       - gateway
     ports:
       - '4173:4173'
+    networks:
+      - floratailor-network
 
 volumes:
   postgres-data:
+  pgadmin-data:
+
+networks:
+  floratailor-network:
+    driver: bridge

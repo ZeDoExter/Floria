@@ -6,6 +6,7 @@ import { ProductsModule } from './modules/products/products.module.js';
 import { CartModule } from './modules/cart/cart.module.js';
 import { OrdersModule } from './modules/orders/orders.module.js';
 import { SearchModule } from './modules/search/search.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 import { AuthMiddleware } from './common/auth.middleware.js';
 import { ProxyModule } from './modules/proxy/proxy.module.js';
 
@@ -18,7 +19,8 @@ import { ProxyModule } from './modules/proxy/proxy.module.js';
     ProductsModule,
     CartModule,
     OrdersModule,
-    SearchModule
+    SearchModule,
+    UsersModule
   ],
   providers: [AuthMiddleware]
 })

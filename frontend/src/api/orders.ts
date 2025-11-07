@@ -12,6 +12,7 @@ export type OrderResponse = {
   totalAmount: number;
   status: string;
   createdAt: string;
+  customerEmail?: string | null;
 };
 
 const normalizeOrder = (order: any): OrderResponse => ({

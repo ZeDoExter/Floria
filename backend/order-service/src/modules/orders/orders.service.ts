@@ -11,18 +11,23 @@ import type {
   SerializedOrderDetail,
   SerializedOrderList
 } from './orders.types.js';
+import { decodeLocalUserEmail, getUserRole } from './roles.js';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listOrders(cognitoUserId: string | undefined): Promise<SerializedOrderList> {
-    if (!cognitoUserId) {
+  async listOrders(cognitoUserId: string | undefined, userEmail: string | undefined): Promise<SerializedOrderList> {
+    const role = getUserRole(userEmail);
+
+    if (!cognitoUserId && role !== 'owner') {
       throw new UnauthorizedException('User authentication required');
     }
 
+    const where = role === 'owner' ? undefined : { cognito_user_id: cognitoUserId };
+
     const orders: OrderWithItems[] = await this.prisma.order.findMany({
-      where: { cognito_user_id: cognitoUserId },
+      where,
       orderBy: { createdAt: 'desc' },
       include: { items: true }
     });
@@ -34,7 +39,9 @@ export class OrdersService {
         status: order.status,
         createdAt: order.createdAt,
         notes: order.notes,
-        deliveryDate: order.deliveryDate
+        deliveryDate: order.deliveryDate,
+        customerId: role === 'owner' ? order.cognito_user_id : undefined,
+        customerEmail: role === 'owner' ? decodeLocalUserEmail(order.cognito_user_id) : undefined
       }))
     };
   }

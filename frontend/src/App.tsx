@@ -7,6 +7,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { OrderHistoryPage } from './pages/OrderHistoryPage';
 import { NavBar } from './components/NavBar';
 import { AdminCatalogPage } from './pages/AdminCatalogPage';
+import { AdminUsersPage } from './pages/AdminUsersPage';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/orders" element={<OrderHistoryPage />} />
           <Route path="/admin/catalog" element={<AdminCatalogPage />} />
           <Route path="/admin/catalog/:section" element={<AdminCatalogPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
         </Routes>
       </main>
     </div>

@@ -7,8 +7,8 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  list(@Headers('x-user-id') userId?: string) {
-    return this.ordersService.listOrders(userId);
+  list(@Headers('x-user-id') userId?: string, @Headers('x-user-email') userEmail?: string) {
+    return this.ordersService.listOrders(userId, userEmail);
   }
 
   @Post()

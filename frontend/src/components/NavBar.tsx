@@ -8,6 +8,9 @@ export const NavBar = () => {
   const { user, logout } = useAuth();
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const canAccessDashboard = user ? hasDashboardAccess(user.role) : false;
+  const isAdmin = user?.role === 'admin';
+  const isOwner = user?.role === 'owner';
+  const ordersLabel = isOwner ? 'Customer orders' : 'Orders';
 
   const linkStyle = (active: boolean) => ({
     color: active ? '#c2415c' : '#444',
@@ -25,29 +28,20 @@ export const NavBar = () => {
             Home
           </NavLink>
           <NavLink to="/orders" style={({ isActive }) => linkStyle(isActive)}>
-            Orders
+            {ordersLabel}
           </NavLink>
           <NavLink to="/cart" style={({ isActive }) => linkStyle(isActive)}>
             Cart ({itemCount})
           </NavLink>
           {canAccessDashboard && (
-            <>
-              <NavLink to="/admin/catalog" style={({ isActive }) => linkStyle(isActive)}>
-                Admin
-              </NavLink>
-              <NavLink to="/admin/catalog/products" style={({ isActive }) => linkStyle(isActive)}>
-                Products
-              </NavLink>
-              <NavLink to="/admin/catalog/categories" style={({ isActive }) => linkStyle(isActive)}>
-                Categories
-              </NavLink>
-              <NavLink to="/admin/catalog/option-groups" style={({ isActive }) => linkStyle(isActive)}>
-                Option groups
-              </NavLink>
-              <NavLink to="/admin/catalog/options" style={({ isActive }) => linkStyle(isActive)}>
-                Options
-              </NavLink>
-            </>
+            <NavLink to="/admin/catalog" style={({ isActive }) => linkStyle(isActive)}>
+              Catalog dashboard
+            </NavLink>
+          )}
+          {isAdmin && (
+            <NavLink to="/admin/users" style={({ isActive }) => linkStyle(isActive)}>
+              Users
+            </NavLink>
           )}
           {user ? (
             <button type="button" onClick={logout} style={{ border: '1px solid #c2415c', background: '#c2415c', color: '#fff', padding: '4px 12px', cursor: 'pointer' }}>

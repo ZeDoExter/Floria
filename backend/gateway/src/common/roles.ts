@@ -1,14 +1,14 @@
 export type UserRole = 'owner' | 'admin' | 'customer';
 
-export type KnownUser = {
+export interface DirectoryUser {
   email: string;
   displayName: string;
   role: UserRole;
   description: string;
   capabilities: string[];
-};
+}
 
-const KNOWN_USERS: KnownUser[] = [
+const DIRECTORY_USERS: DirectoryUser[] = [
   {
     email: 'flora.owner@example.com',
     displayName: 'Main shop owner',
@@ -58,7 +58,7 @@ const KNOWN_USERS: KnownUser[] = [
   }
 ];
 
-const ROLE_BY_EMAIL: Record<string, UserRole> = KNOWN_USERS.reduce<Record<string, UserRole>>((acc, user) => {
+const ROLE_BY_EMAIL = DIRECTORY_USERS.reduce<Record<string, UserRole>>((acc, user) => {
   acc[user.email.toLowerCase()] = user.role;
   return acc;
 }, {});
@@ -67,17 +67,7 @@ export const getUserRole = (email?: string | null): UserRole => {
   if (!email) {
     return 'customer';
   }
-
-  const normalized = email.trim().toLowerCase();
-  return ROLE_BY_EMAIL[normalized] ?? 'customer';
+  return ROLE_BY_EMAIL[email.trim().toLowerCase()] ?? 'customer';
 };
 
-export const listKnownUsers = (): KnownUser[] => KNOWN_USERS.map((user) => ({ ...user }));
-
-export const hasDashboardAccess = (role: UserRole) => role === 'admin' || role === 'owner';
-
-export const canManageCatalog = (role: UserRole) => role === 'owner';
-
-export const canPlaceOrders = (role: UserRole) => role !== 'owner';
-
-export const canReviewCustomerOrders = (role: UserRole) => role === 'owner';
+export const listDirectoryUsers = (): DirectoryUser[] => DIRECTORY_USERS.map((entry) => ({ ...entry }));
