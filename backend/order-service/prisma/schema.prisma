@@ -23,6 +23,7 @@ model Product {
   basePrice      Decimal        @db.Decimal(10, 2)
   imageUrl       String?
   categoryId     String
+  storeKey       String         @default("flagship")
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   optionGroups   OptionGroup[]
@@ -85,6 +86,7 @@ model Order {
   cognito_user_id String
   totalAmount     Decimal     @db.Decimal(10, 2)
   status          String      @default("PENDING")
+  storeKey        String      @default("flagship")
   notes           String?
   deliveryDate    DateTime?
   createdAt       DateTime    @default(now())

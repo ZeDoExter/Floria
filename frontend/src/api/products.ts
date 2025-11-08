@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import type { StoreKey } from './catalog';
 
 export interface ProductSummary {
   id: string;
@@ -8,6 +9,7 @@ export interface ProductSummary {
   imageUrl?: string;
   categoryId?: string;
   categoryName?: string;
+  storeKey: StoreKey;
 }
 
 export interface ProductDetail extends ProductSummary {
@@ -36,7 +38,8 @@ const normalizeProductSummary = (product: any): ProductSummary => ({
   ...product,
   basePrice: Number(product.basePrice ?? 0),
   categoryId: product.categoryId ?? product.category?.id,
-  categoryName: product.category?.name ?? product.categoryName
+  categoryName: product.category?.name ?? product.categoryName,
+  storeKey: (product.storeKey as StoreKey) ?? 'flagship'
 });
 
 const normalizeProductDetail = (product: any): ProductDetail => ({

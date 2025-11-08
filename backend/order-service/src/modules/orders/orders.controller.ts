@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Patch, Post } from '@nestjs/common';
 import { OrdersService } from './orders.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto.js';
 
 @Controller('orders')
 export class OrdersController {
@@ -14,5 +15,14 @@ export class OrdersController {
   @Post()
   create(@Headers('x-user-id') userId: string | undefined, @Body() dto: CreateOrderDto) {
     return this.ordersService.createOrder(userId, dto);
+  }
+
+  @Patch(':orderId/status')
+  updateStatus(
+    @Headers('x-user-email') userEmail: string | undefined,
+    @Param('orderId') orderId: string,
+    @Body() dto: UpdateOrderStatusDto
+  ) {
+    return this.ordersService.updateOrderStatus(userEmail, orderId, dto.status);
   }
 }

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import {
   Category,
   CreateOptionGroupInput,
+  StoreKey,
   createCategory,
   createOption,
   createOptionGroup,
@@ -30,7 +31,14 @@ export const AdminCatalogPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
-  const [productForm, setProductForm] = useState({ name: '', description: '', basePrice: '', imageUrl: '', categoryId: '' });
+  const [productForm, setProductForm] = useState({
+    name: '',
+    description: '',
+    basePrice: '',
+    imageUrl: '',
+    categoryId: '',
+    storeKey: 'flagship' as StoreKey
+  });
   const [optionGroupForm, setOptionGroupForm] = useState({
     productId: '',
     name: '',
@@ -156,12 +164,13 @@ export const AdminCatalogPage = () => {
           description: productForm.description.trim() || undefined,
           basePrice: Number(productForm.basePrice || 0),
           imageUrl: productForm.imageUrl.trim() || undefined,
-          categoryId: productForm.categoryId
+          categoryId: productForm.categoryId,
+          storeKey: productForm.storeKey
         },
         authToken
       );
       setProductFeedback({ status: 'success', message: 'Product created successfully.' });
-      setProductForm({ name: '', description: '', basePrice: '', imageUrl: '', categoryId: '' });
+      setProductForm({ name: '', description: '', basePrice: '', imageUrl: '', categoryId: '', storeKey: 'flagship' });
       await loadCatalog();
     } catch (err) {
       console.error(err);
@@ -294,7 +303,7 @@ export const AdminCatalogPage = () => {
         <ul style={{ marginBottom: 12, paddingLeft: 16 }}>
           {products.map((product) => (
             <li key={product.id}>
-              <strong>{product.name}</strong> – ${product.basePrice.toFixed(2)} (Category: {product.category?.name ?? 'Unassigned'} · Option groups: {product.optionGroups.length})
+              <strong>{product.name}</strong> – ${product.basePrice.toFixed(2)} (Category: {product.category?.name ?? 'Unassigned'} · Option groups: {product.optionGroups.length} · Store: {product.storeKey === 'weekend-market' ? 'Weekend market stall' : 'Flagship boutique'})
             </li>
           ))}
           {products.length === 0 && <li>No products found.</li>}
@@ -340,6 +349,17 @@ export const AdminCatalogPage = () => {
                     {category.name}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
+              Storefront
+              <select
+                value={productForm.storeKey}
+                onChange={(event) => setProductForm((current) => ({ ...current, storeKey: event.target.value as StoreKey }))}
+                style={{ marginTop: 4, padding: '6px 8px' }}
+              >
+                <option value="flagship">Flagship boutique</option>
+                <option value="weekend-market">Weekend market stall</option>
               </select>
             </label>
             <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>

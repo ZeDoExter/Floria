@@ -35,6 +35,10 @@ export class ProxyService {
     return this.request<T>('post', service, path, body, context);
   }
 
+  async patch<T>(service: keyof ProxyService['serviceUrls'], path: string, body: unknown, context: ForwardContext = {}) {
+    return this.request<T>('patch', service, path, body, context);
+  }
+
   async put<T>(service: keyof ProxyService['serviceUrls'], path: string, body: unknown, context: ForwardContext = {}) {
     return this.request<T>('put', service, path, body, context);
   }
@@ -44,7 +48,7 @@ export class ProxyService {
   }
 
   private async request<T>(
-    method: 'get' | 'post' | 'put' | 'delete',
+    method: 'get' | 'post' | 'put' | 'patch' | 'delete',
     service: keyof ProxyService['serviceUrls'],
     path: string,
     body?: unknown,

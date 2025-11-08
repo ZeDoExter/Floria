@@ -1,4 +1,17 @@
 import type { Decimal } from '@prisma/client/runtime/library';
+import type { StoreKey } from './roles.js';
+
+export const ORDER_STATUS_VALUES = [
+  'PENDING',
+  'PLACED',
+  'PREPARING',
+  'READY_FOR_PICKUP',
+  'OUT_FOR_DELIVERY',
+  'COMPLETED',
+  'CANCELLED'
+] as const;
+
+export type OrderStatus = (typeof ORDER_STATUS_VALUES)[number];
 
 export interface ProductOption {
   id: string;
@@ -16,6 +29,7 @@ export interface ProductWithOptionGroups {
   id: string;
   name: string;
   basePrice: Decimal;
+  storeKey: StoreKey;
   optionGroups: ProductOptionGroup[];
 }
 
@@ -34,6 +48,7 @@ export interface OrderWithItems {
   cognito_user_id: string;
   totalAmount: Decimal;
   status: string;
+  storeKey: StoreKey;
   createdAt: Date;
   notes: string | null;
   deliveryDate: Date | null;
@@ -69,6 +84,7 @@ export interface SerializedOrderList {
     createdAt: Date;
     notes: string | null;
     deliveryDate: Date | null;
+    storeKey: StoreKey;
     customerId?: string;
     customerEmail?: string | null;
   }>;
@@ -82,5 +98,6 @@ export interface SerializedOrderDetail {
     createdAt: Date;
     notes: string | null;
     deliveryDate: Date | null;
+    storeKey: StoreKey;
   };
 }

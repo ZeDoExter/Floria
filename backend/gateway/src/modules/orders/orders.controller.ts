@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
 import { ProxyService } from '../proxy/proxy.service.js';
 import { RequestWithUser } from '../../common/auth.middleware.js';
 
@@ -14,5 +14,10 @@ export class OrdersController {
   @Post()
   create(@Req() req: RequestWithUser, @Body() body: unknown) {
     return this.proxy.post('order', '/orders', body, { user: req.user });
+  }
+
+  @Patch(':orderId/status')
+  updateStatus(@Req() req: RequestWithUser, @Param('orderId') orderId: string, @Body() body: unknown) {
+    return this.proxy.patch('order', `/orders/${orderId}/status`, body, { user: req.user });
   }
 }

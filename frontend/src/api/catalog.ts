@@ -1,5 +1,7 @@
 import { apiClient } from './client';
 
+export type StoreKey = 'flagship' | 'weekend-market';
+
 export interface Category {
   id: string;
   name: string;
@@ -37,6 +39,7 @@ export interface CreateProductInput {
   basePrice: number;
   imageUrl?: string;
   categoryId: string;
+  storeKey?: StoreKey;
 }
 
 export const createProduct = async (input: CreateProductInput, token?: string) => {

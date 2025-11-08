@@ -1,4 +1,7 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export const STORE_KEYS = ['flagship', 'weekend-market'] as const;
+export type StoreKey = (typeof STORE_KEYS)[number];
 
 export class CreateProductDto {
   @IsString()
@@ -19,4 +22,9 @@ export class CreateProductDto {
   @IsNotEmpty()
   @IsString()
   categoryId!: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn([...STORE_KEYS])
+  storeKey?: StoreKey;
 }
