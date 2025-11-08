@@ -34,21 +34,22 @@ export class OrdersService {
       ? { storeKey: getOwnerStoreKey(userEmail) }
       : { cognito_user_id: cognitoUserId };
 
-    const orders: OrderWithItems[] = await this.prisma.order.findMany({
+    const orders = await this.prisma.order.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: { items: true }
     });
+    type OrderWithItemsPrisma = typeof orders[number];
 
     return {
-      orders: orders.map((order) => ({
+      orders: orders.map((order: OrderWithItemsPrisma) => ({
         id: order.id,
         totalAmount: Number(order.totalAmount),
         status: order.status,
         createdAt: order.createdAt,
         notes: order.notes,
         deliveryDate: order.deliveryDate,
-        storeKey: order.storeKey,
+        storeKey: order.storeKey as StoreKey,
         customerId: role === 'owner' ? order.cognito_user_id : undefined,
         customerEmail: role === 'owner' ? decodeLocalUserEmail(order.cognito_user_id) : undefined
       }))
@@ -171,7 +172,7 @@ export class OrdersService {
         createdAt: order.createdAt,
         notes: order.notes,
         deliveryDate: order.deliveryDate,
-        storeKey: order.storeKey
+        storeKey: order.storeKey as StoreKey
       }
     };
   }
@@ -208,7 +209,7 @@ export class OrdersService {
         createdAt: order.createdAt,
         notes: order.notes,
         deliveryDate: order.deliveryDate,
-        storeKey: order.storeKey
+        storeKey: order.storeKey as StoreKey
       }
     };
   }
