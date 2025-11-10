@@ -4,6 +4,7 @@ import { fetchProductDetail, ProductDetail } from '../api/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { canPlaceOrders } from '../utils/auth';
+import { PackageIcon } from '../components/icons/PackageIcon';
 
 export const ProductDetailPage = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -17,7 +18,6 @@ export const ProductDetailPage = () => {
   const { addItem } = useCart();
   const { user } = useAuth();
   
-  // Owner can order from other owners' shops, but not their own
   const isOwnProduct = user && product && user.userId === product.ownerId;
   const canOrder = user ? (canPlaceOrders(user.role) && !isOwnProduct) : true;
 
@@ -105,17 +105,17 @@ export const ProductDetailPage = () => {
     setFormError(null);
 
     if (!user) {
-      setFormError('กรุณา login ก่อนเพิ่มสินค้าลงตะกร้า');
+      setFormError('Please sign in to add items to cart');
       return;
     }
 
     if (isOwnProduct) {
-      setFormError('คุณไม่สามารถสั่งซื้อสินค้าจากร้านตัวเองได้');
+      setFormError('You cannot order from your own shop');
       return;
     }
     
     if (!canOrder) {
-      setFormError('กรุณา login ก่อนสั่งซื้อสินค้า');
+      setFormError('Please sign in to place orders');
       return;
     }
 
@@ -143,7 +143,7 @@ export const ProductDetailPage = () => {
 
     if (hasError) {
       setGroupErrors(nextGroupErrors);
-      setFormError('Please fix the highlighted option groups before adding this arrangement to your cart.');
+      setFormError('Please fix the highlighted option groups before adding to cart.');
       return;
     }
 
@@ -151,158 +151,166 @@ export const ProductDetailPage = () => {
     const optionIds = Object.values(selectedOptions).flat();
     
     try {
-      await addItem({ productId: product.id, quantity: 1, selectedOptionIds: optionIds, unitPrice: price, productName: product?.name ?? "" } as any);
+      await addItem({ 
+        productId: product.id, 
+        quantity: 1, 
+        selectedOptionIds: optionIds, 
+        unitPrice: price, 
+        productName: product?.name ?? "" 
+      } as any);
       navigate('/cart');
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
+      setFormError(err instanceof Error ? err.message : 'Unable to add item to cart');
     }
   };
 
   if (isLoading) {
-    return <p>Loading arrangement...</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading arrangement...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <p style={{ color: '#c2415c' }}>{error}</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="bg-error/10 border border-error rounded-lg p-4">
+          <p className="text-error text-center">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!product) {
-    return <p>Product not found.</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Product not found.</p>
+      </div>
+    );
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <h1 style={{ fontSize: 28, marginBottom: 6, color: '#c2415c' }}>{product.name}</h1>
-        {product.description && <p style={{ marginBottom: 6 }}>{product.description}</p>}
-        <p style={{ fontSize: 20, fontWeight: 600 }}>${price.toFixed(2)}</p>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {product.optionGroups.map((group, index) => (
-          <div 
-            key={group.id} 
-            style={{ 
-              border: '2px solid #e5e5e5', 
-              background: '#fff', 
-              padding: 20,
-              borderRadius: 8,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}
-          >
-            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ 
-                  background: '#c2415c', 
-                  color: '#fff', 
-                  padding: '2px 8px', 
-                  borderRadius: 4, 
-                  fontSize: 12,
-                  fontWeight: 600
-                }}>
-                  {index + 1}
-                </span>
-                <h2 style={{ fontSize: 18, margin: 0, color: '#c2415c' }}>{group.name}</h2>
-                {group.isRequired && (
-                  <span style={{ 
-                    background: '#fff5f8', 
-                    color: '#c2415c', 
-                    padding: '2px 8px', 
-                    borderRadius: 4, 
-                    fontSize: 11,
-                    fontWeight: 600,
-                    border: '1px solid #f6c4d5'
-                  }}>
-                    REQUIRED
-                  </span>
-                )}
+    <main className="min-h-screen bg-background px-4 py-4">
+      <div className="mx-auto max-w-lg">
+        {/* Main Card Container - includes everything */}
+        <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+          {/* Back Button inside card */}
+          <div className="p-4 pb-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+            >
+              <span className="text-xl">←</span>
+              <span className="text-sm font-medium">Back</span>
+            </button>
+          </div>
+
+          {/* Product Image */}
+          <div className="bg-muted mt-4">
+            {product.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                className="w-full h-72 object-cover"
+              />
+            ) : (
+              <div className="w-full h-72 bg-muted flex items-center justify-center">
+                <PackageIcon className="h-20 w-20 text-muted-foreground opacity-30" />
               </div>
-              {group.description && <p style={{ fontSize: 14, margin: '4px 0 0 0', color: '#666' }}>{group.description}</p>}
-              <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0 0' }}>
-                Select {group.minSelect === group.maxSelect 
-                  ? `exactly ${group.minSelect}` 
-                  : `${group.minSelect} to ${group.maxSelect || group.options.length}`} option{(group.maxSelect || group.options.length) > 1 ? 's' : ''}
-              </p>
-            </div>
-            <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 0, margin: 0 }}>
-              {group.options.map((option) => {
-                const isSelected = selectedOptions[group.id]?.includes(option.id);
-                return (
-                  <li key={option.id} style={{ listStyle: 'none' }}>
-                    <label
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: 12,
-                        border: isSelected ? '2px solid #c2415c' : '1px solid #e5e5e5',
-                        padding: '12px 16px',
-                        background: isSelected ? '#fff5f8' : '#fafafa',
-                        cursor: 'pointer',
-                        borderRadius: 6,
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontWeight: 600, fontSize: 15 }}>{option.name}</span>
-                          {option.priceModifier !== 0 && (
-                            <span style={{ 
-                              color: option.priceModifier > 0 ? '#c2415c' : '#2f855a',
-                              fontSize: 14,
-                              fontWeight: 600
-                            }}>
-                              {option.priceModifier > 0 ? '+' : ''}{option.priceModifier.toFixed(2)} บาท
-                            </span>
-                          )}
-                        </div>
-                        {option.description && <p style={{ fontSize: 13, margin: '4px 0 0 0', color: '#666' }}>{option.description}</p>}
-                      </div>
-                      <input 
-                        type="checkbox" 
-                        checked={isSelected} 
-                        onChange={() => toggleOption(group, option.id)}
-                        style={{ width: 20, height: 20, cursor: 'pointer' }}
-                      />
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-            {groupErrors[group.id] && (
-              <p style={{ 
-                marginTop: 12, 
-                fontSize: 13, 
-                color: '#c2415c',
-                background: '#fff5f8',
-                padding: '8px 12px',
-                borderRadius: 4,
-                border: '1px solid #f6c4d5'
-              }}>
-                ⚠️ {groupErrors[group.id]}
-              </p>
             )}
           </div>
-        ))}
+
+          {/* Product Info */}
+          <div className="p-5 space-y-4">
+            {/* Header */}
+            <div className="pb-4 border-b border-border">
+              <h1 className="text-xl font-bold text-foreground mb-2">{product.name}</h1>
+              {product.description && (
+                <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
+              )}
+            </div>
+
+            {/* Option Groups */}
+            {product.optionGroups.length > 0 && (
+              <div className="space-y-4">
+                {product.optionGroups.map((group) => (
+                  <div key={group.id} className="space-y-2.5">
+                    {/* Group Header */}
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">
+                        {group.name}
+                        {group.isRequired && <span className="text-error ml-1">*</span>}
+                      </h3>
+                      {group.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{group.description}</p>
+                      )}
+                    </div>
+
+                    {/* Options */}
+                    <div className="flex flex-wrap gap-2">
+                      {group.options.map((option) => {
+                        const isSelected = selectedOptions[group.id]?.includes(option.id);
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => toggleOption(group, option.id)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                              isSelected
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-foreground border border-border hover:border-primary'
+                            }`}
+                          >
+                            {option.name}
+                            {option.priceModifier !== 0 && (
+                              <span className="ml-1 text-xs">
+                                ({option.priceModifier > 0 ? '+' : ''}${option.priceModifier.toFixed(2)})
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Group Error */}
+                    {groupErrors[group.id] && (
+                      <p className="text-xs text-error">
+                        {groupErrors[group.id]}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Form Error */}
+            {formError && (
+              <div className="bg-error/10 border border-error rounded-lg p-3">
+                <p className="text-xs text-error">{formError}</p>
+              </div>
+            )}
+
+            {/* Add to Cart Button */}
+            <div className="pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={!canOrder}
+                className="w-full bg-success text-white py-3 px-5 rounded-lg font-bold text-base hover:bg-success/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Purchase - ${price.toFixed(2)}
+              </button>
+
+              {!canOrder && isOwnProduct && (
+                <p className="text-xs text-error text-center mt-2">
+                  You cannot order from your own shop
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-      {formError && <p style={{ color: '#c2415c' }}>{formError}</p>}
-      {!canOrder && <p style={{ color: '#c2415c' }}>Store owners can manage products but cannot purchase from their own shop.</p>}
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={!canOrder}
-        style={{
-          background: '#c2415c',
-          color: '#fff',
-          padding: '8px 16px',
-          border: 'none',
-          cursor: !canOrder ? 'not-allowed' : 'pointer',
-          opacity: !canOrder ? 0.6 : 1
-        }}
-      >
-        Add to cart
-      </button>
-    </section>
+    </main>
   );
 };
-
-

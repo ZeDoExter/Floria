@@ -1,12 +1,11 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LoginForm } from '../components/LoginForm';
 
 export const ProfilePage = () => {
   const { user, login, logout, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,82 +14,38 @@ export const ProfilePage = () => {
     }
   }, [user, navigate]);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleLogin = async (email: string, password: string) => {
     setError(null);
     try {
       await login({ email, password });
-      setEmail('');
-      setPassword('');
     } catch (err) {
       console.error(err);
-      setError('Unable to log in with those credentials.');
+      setError('Email or Password incorrect');
     }
   };
 
   if (user) {
     return (
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <p>You are signed in as {user.email}</p>
-        <p style={{ fontSize: 14, color: '#555' }}>Current role: {user.role}</p>
-        {user.role === 'owner' && (
-          <p style={{ fontSize: 13, color: '#c2415c' }}>
-            Store owners have full catalog control but cannot place orders from this storefront.
-          </p>
-        )}
-        <button
-          type="button"
-          onClick={logout}
-          style={{ width: 'fit-content', background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: 'pointer' }}
-        >
-          Sign out
-        </button>
+      <section className="min-h-screen flex items-center justify-center px-4 bg-background">
+        <div className="w-full max-w-md bg-card/70 backdrop-blur-lg border-2 border-foreground/15 rounded-3xl p-8 shadow-lg flex flex-col gap-3">
+          <p className="text-foreground">You are signed in as {user.email}</p>
+          <p className="text-sm text-muted-foreground">Current role: {user.role}</p>
+          {user.role === 'owner' && (
+            <p className="text-xs text-error">
+              Store owners have full catalog control but cannot place orders from this storefront.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={logout}
+            className="w-fit bg-foreground text-card px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Sign out
+          </button>
+        </div>
       </section>
     );
   }
 
-  return (
-    <section style={{ maxWidth: 360, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <header>
-        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Sign in</h1>
-        <p>Access saved carts, checkout faster, and view your order history.</p>
-      </header>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label style={{ fontSize: 14 }}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            style={{ marginTop: 4, padding: '6px 8px', width: '100%' }}
-          />
-        </label>
-        <label style={{ fontSize: 14 }}>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            style={{ marginTop: 4, padding: '6px 8px', width: '100%' }}
-          />
-        </label>
-        {error && <p style={{ color: '#c2415c' }}>{error}</p>}
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{ background: '#c2415c', color: '#fff', padding: '8px 16px', border: 'none', cursor: 'pointer', opacity: isLoading ? 0.6 : 1 }}
-        >
-          {isLoading ? 'Signing in...' : 'Sign in'}
-        </button>
-      </form>
-      <p style={{ fontSize: 14, textAlign: 'center' }}>
-        Don't have an account?{' '}
-        <Link to="/register" style={{ color: '#c2415c', textDecoration: 'none' }}>
-          Create one
-        </Link>
-      </p>
-    </section>
-  );
+  return <LoginForm onSubmit={handleLogin} isLoading={isLoading} error={error} />;
 };

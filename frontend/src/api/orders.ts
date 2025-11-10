@@ -19,6 +19,23 @@ export type CheckoutPayload = {
   deliveryDate?: string;
 };
 
+export type OrderItemResponse = {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  optionSnapshot: {
+    selectedOptions?: Array<{
+      id: string;
+      name: string;
+      priceModifier: number;
+    }>;
+    selectedOptionIds?: string[];
+    imageUrl?: string;
+  };
+};
+
 export type OrderResponse = {
   id: string;
   totalAmount: number;
@@ -27,6 +44,7 @@ export type OrderResponse = {
   notes: string | null;
   deliveryDate: string | null;
   customerEmail?: string | null;
+  items?: OrderItemResponse[];
 };
 
 const normalizeOrder = (order: any): OrderResponse => ({
