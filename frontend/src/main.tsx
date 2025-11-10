@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { AuthProvider } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
+import { useAuthStore } from './stores/authStore';
+
+// Initialize auth store before rendering
+function AppInitializer() {
+  useEffect(() => {
+    // Load stored authentication on mount
+    useAuthStore.getState().loadStored();
+  }, []);
+
+  return <App />;
+}
 
 const rootElement = document.getElementById('root');
 
@@ -14,11 +23,7 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <App />
-        </CartProvider>
-      </AuthProvider>
+      <AppInitializer />
     </BrowserRouter>
   </React.StrictMode>
 );

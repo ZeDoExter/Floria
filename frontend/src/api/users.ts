@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 
-export type DirectoryUser = {
+export type User = {
   email: string;
   displayName: string;
   role: string;
@@ -9,7 +9,7 @@ export type DirectoryUser = {
 };
 
 export type DirectoryResponse = {
-  users: DirectoryUser[];
+  users: User[];
 };
 
 export const fetchDirectory = async (token: string) => {
@@ -19,7 +19,7 @@ export const fetchDirectory = async (token: string) => {
 
   const payload = response.data?.users;
   if (!Array.isArray(payload)) {
-    return [] as DirectoryUser[];
+    return [] as User[];
   }
 
   return payload.map((user) => ({

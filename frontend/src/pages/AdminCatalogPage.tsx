@@ -1,579 +1,476 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
+import { useAdminCatalogStore } from '../stores/adminCatalogStore';
+import { OrderStatus, StoreKey } from '../types/domain';
 import {
-  Category,
-  CreateOptionGroupInput,
-  StoreKey,
-  createCategory,
-  createOption,
-  createOptionGroup,
-  createProduct,
-  fetchCategories
-} from '../api/catalog';
-import { fetchProductDetail, fetchProducts, ProductDetail } from '../api/products';
-import { useAuth } from '../context/AuthContext';
-import { canManageCatalog, hasDashboardAccess } from '../utils/auth';
+  CategoryForm,
+  ProductForm,
+  OptionGroupForm,
+  OptionForm,
+  CategoryList,
+  ProductList,
+  OptionGroupList,
+  OptionList,
+  OrderList,
+  FeedbackBanner
+} from '../components/admin';
 
-const SECTION_KEYS = ['categories', 'products', 'option-groups', 'options'] as const;
-type SectionKey = (typeof SECTION_KEYS)[number];
+type TabType = 'products' | 'categories' | 'option-groups' | 'options' | 'orders';
 
-type Feedback = {
-  status: 'success' | 'error';
-  message: string;
-};
+// Tab Button Component
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 font-medium rounded-t-lg transition-colors ${
+        active
+          ? 'bg-primary text-primary-foreground'
+          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
-export const AdminCatalogPage = () => {
-  const { user } = useAuth();
-  const params = useParams<{ section?: string }>();
-  const activeSection = SECTION_KEYS.find((key) => key === params.section) ?? undefined;
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<ProductDetail[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
-  const [productForm, setProductForm] = useState({
-    name: '',
-    description: '',
-    basePrice: '',
-    imageUrl: '',
-    categoryId: '',
-    storeKey: 'flagship' as StoreKey
+export default function OwnerCatalogPage() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const {
+    categories,
+    products,
+    optionGroups,
+    options,
+    orders,
+    loading,
+    error,
+    loadAll,
+    loadOrders,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    createOptionGroup,
+    updateOptionGroup,
+    deleteOptionGroup,
+    createOption,
+    updateOption,
+    deleteOption,
+    updateOrderStatus
+  } = useAdminCatalogStore();
+
+  const [activeTab, setActiveTab] = useState<TabType>('products');
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Category form state
+  const [categoryForm, setCategoryForm] = useState({ id: '', name: '', description: '' });
+  
+  // Product form state
+  const [productForm, setProductForm] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    basePrice: string;
+    imageUrl: string;
+    categoryId: string;
+    storeKey: StoreKey;
+    imageFile?: File | null;
+  }>({
+    id: '', name: '', description: '', basePrice: '', imageUrl: '',
+    categoryId: '', storeKey: 'flagship', imageFile: null
   });
+
+  // Option Group form state
   const [optionGroupForm, setOptionGroupForm] = useState({
-    productId: '',
-    name: '',
-    description: '',
-    isRequired: false,
-    minSelect: '0',
-    maxSelect: '0'
+    id: '', name: '', description: '', isRequired: false, minSelect: '0', maxSelect: '1'
   });
-  const [optionForm, setOptionForm] = useState({ optionGroupId: '', name: '', description: '', priceModifier: '0' });
-  const [categoryFeedback, setCategoryFeedback] = useState<Feedback | null>(null);
-  const [productFeedback, setProductFeedback] = useState<Feedback | null>(null);
-  const [optionGroupFeedback, setOptionGroupFeedback] = useState<Feedback | null>(null);
-  const [optionFeedback, setOptionFeedback] = useState<Feedback | null>(null);
 
-  const categoriesRef = useRef<HTMLDivElement>(null);
-  const productsRef = useRef<HTMLDivElement>(null);
-  const optionGroupsRef = useRef<HTMLDivElement>(null);
-  const optionsRef = useRef<HTMLDivElement>(null);
-  const sectionRefs: Record<SectionKey, React.RefObject<HTMLDivElement>> = {
-    categories: categoriesRef,
-    products: productsRef,
-    'option-groups': optionGroupsRef,
-    options: optionsRef
-  };
+  // Option form state
+  const [optionForm, setOptionForm] = useState({
+    id: '', name: '', description: '', priceModifier: '0'
+  });
 
-  const loadCatalog = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [categoryData, productSummaries] = await Promise.all([fetchCategories(), fetchProducts()]);
-      const details = await Promise.all(
-        productSummaries.map(async (summary) => {
-          const detail = await fetchProductDetail(summary.id);
-          return detail;
-        })
-      );
-      setCategories(categoryData);
-      setProducts(details);
-    } catch (err) {
-      console.error(err);
-      setError('Unable to load catalog data.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  // Auth check
   useEffect(() => {
-    void loadCatalog();
-  }, [loadCatalog]);
+    if (!user || (user.role !== 'owner' && user.role !== 'admin')) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
+  // Load data
   useEffect(() => {
-    if (!activeSection) {
-      return;
-    }
-    const ref = sectionRefs[activeSection];
-    if (ref?.current) {
-      ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection]);
+    loadAll();
+    loadOrders();
+  }, [loadAll, loadOrders]);
 
-  const role = user?.role ?? 'customer';
-  const canViewCatalog = hasDashboardAccess(role);
-  const canManage = canManageCatalog(role);
+  // Feedback helper
+  const showFeedback = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 3000);
+  };
 
-  const optionGroups = useMemo(() => {
-    return products.flatMap((product) =>
-      product.optionGroups.map((group) => ({
-        id: group.id,
-        name: group.name,
-        productName: product.name
-      }))
-    );
-  }, [products]);
-
-  if (!canViewCatalog) {
-    return (
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Admin catalog</h1>
-        <p>You need an administrator or store owner account to view the catalog dashboard.</p>
-      </section>
-    );
-  }
-
-  const authToken = user?.token;
-  const disableCatalogActions = !canManage;
-
-  const handleCreateCategory = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setCategoryFeedback(null);
-    if (disableCatalogActions) {
-      setCategoryFeedback({ status: 'error', message: 'You do not have permission to create categories.' });
-      return;
-    }
+  // Category handlers
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await createCategory(
-        {
-          name: categoryForm.name.trim(),
-          description: categoryForm.description.trim() || undefined
-        },
-        authToken
-      );
-      setCategoryFeedback({ status: 'success', message: 'Category created successfully.' });
-      setCategoryForm({ name: '', description: '' });
-      await loadCatalog();
+      if (categoryForm.id) {
+        await updateCategory(categoryForm.id, { name: categoryForm.name, description: categoryForm.description });
+        showFeedback('success', 'Category updated successfully');
+      } else {
+        await createCategory({ name: categoryForm.name, description: categoryForm.description });
+        showFeedback('success', 'Category created successfully');
+      }
+      resetCategoryForm();
     } catch (err) {
-      console.error(err);
-      setCategoryFeedback({ status: 'error', message: 'Failed to create category. Please try again.' });
+      showFeedback('error', 'Failed to save category');
     }
   };
 
-  const handleCreateProduct = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setProductFeedback(null);
-    if (disableCatalogActions) {
-      setProductFeedback({ status: 'error', message: 'You do not have permission to create products.' });
-      return;
-    }
-    try {
-      await createProduct(
-        {
-          name: productForm.name.trim(),
-          description: productForm.description.trim() || undefined,
-          basePrice: Number(productForm.basePrice || 0),
-          imageUrl: productForm.imageUrl.trim() || undefined,
-          categoryId: productForm.categoryId,
-          storeKey: productForm.storeKey
-        },
-        authToken
-      );
-      setProductFeedback({ status: 'success', message: 'Product created successfully.' });
-      setProductForm({ name: '', description: '', basePrice: '', imageUrl: '', categoryId: '', storeKey: 'flagship' });
-      await loadCatalog();
-    } catch (err) {
-      console.error(err);
-      setProductFeedback({ status: 'error', message: 'Failed to create product. Please review the details and try again.' });
+  const handleCategoryEdit = (id: string) => {
+    const cat = categories.find((c: any) => c.id === id);
+    if (cat) setCategoryForm({ id: cat.id, name: cat.name, description: cat.description || '' });
+  };
+
+  const handleCategoryDelete = async (id: string) => {
+    if (confirm('Delete this category?')) {
+      try {
+        await deleteCategory(id);
+        showFeedback('success', 'Category deleted');
+      } catch (err) {
+        showFeedback('error', 'Failed to delete category');
+      }
     }
   };
 
-  const handleCreateOptionGroup = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setOptionGroupFeedback(null);
-    if (disableCatalogActions) {
-      setOptionGroupFeedback({ status: 'error', message: 'You do not have permission to create option groups.' });
-      return;
-    }
+  const resetCategoryForm = () => setCategoryForm({ id: '', name: '', description: '' });
+
+  // Product handlers
+  const handleProductSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const payload: CreateOptionGroupInput = {
-        productId: optionGroupForm.productId,
-        name: optionGroupForm.name.trim(),
-        description: optionGroupForm.description.trim() || undefined,
-        isRequired: optionGroupForm.isRequired,
-        minSelect: Number(optionGroupForm.minSelect || 0),
-        maxSelect: Number(optionGroupForm.maxSelect || 0)
+      let imageUrl = productForm.imageUrl;
+
+      // If user uploaded a file, convert to base64
+      if (productForm.imageFile) {
+        imageUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(productForm.imageFile!);
+        });
+      }
+
+      const data = {
+        name: productForm.name,
+        description: productForm.description,
+        basePrice: parseFloat(productForm.basePrice),
+        imageUrl,
+        categoryId: productForm.categoryId || undefined,
+        storeKey: productForm.storeKey
       };
-      await createOptionGroup(payload, authToken);
-      setOptionGroupFeedback({ status: 'success', message: 'Option group created successfully.' });
-      setOptionGroupForm({ productId: '', name: '', description: '', isRequired: false, minSelect: '0', maxSelect: '0' });
-      await loadCatalog();
+      if (productForm.id) {
+        await updateProduct(productForm.id, data);
+        showFeedback('success', 'Product updated successfully');
+      } else {
+        await createProduct(data);
+        showFeedback('success', 'Product created successfully');
+      }
+      resetProductForm();
     } catch (err) {
-      console.error(err);
-      setOptionGroupFeedback({ status: 'error', message: 'Failed to create option group. Please try again.' });
+      showFeedback('error', 'Failed to save product');
     }
   };
 
-  const handleCreateOption = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setOptionFeedback(null);
-    if (disableCatalogActions) {
-      setOptionFeedback({ status: 'error', message: 'You do not have permission to create options.' });
-      return;
+  const handleProductEdit = (id: string) => {
+    const prod = products.find((p: any) => p.id === id);
+    if (prod) {
+      setProductForm({
+        id: prod.id,
+        name: prod.name,
+        description: prod.description || '',
+        basePrice: prod.basePrice.toString(),
+        imageUrl: prod.imageUrl || '',
+        categoryId: prod.categoryId || '',
+        storeKey: prod.storeKey
+      });
     }
+  };
+
+  const handleProductDelete = async (id: string) => {
+    if (confirm('Delete this product?')) {
+      try {
+        await deleteProduct(id);
+        showFeedback('success', 'Product deleted');
+      } catch (err) {
+        showFeedback('error', 'Failed to delete product');
+      }
+    }
+  };
+
+  const resetProductForm = () => {
+    setProductForm({
+      id: '', name: '', description: '', basePrice: '', imageUrl: '',
+      categoryId: '', storeKey: 'flagship', imageFile: null
+    });
+  };
+
+  // Option Group handlers
+  const handleOptionGroupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await createOption(
-        {
-          optionGroupId: optionForm.optionGroupId,
-          name: optionForm.name.trim(),
-          description: optionForm.description.trim() || undefined,
-          priceModifier: Number(optionForm.priceModifier || 0)
-        },
-        authToken
-      );
-      setOptionFeedback({ status: 'success', message: 'Option created successfully.' });
-      setOptionForm({ optionGroupId: '', name: '', description: '', priceModifier: '0' });
-      await loadCatalog();
+      const data = {
+        name: optionGroupForm.name,
+        description: optionGroupForm.description,
+        isRequired: optionGroupForm.isRequired,
+        minSelect: parseInt(optionGroupForm.minSelect),
+        maxSelect: parseInt(optionGroupForm.maxSelect)
+      };
+      if (optionGroupForm.id) {
+        await updateOptionGroup(optionGroupForm.id, data);
+        showFeedback('success', 'Option group updated successfully');
+      } else {
+        await createOptionGroup(data);
+        showFeedback('success', 'Option group created successfully');
+      }
+      resetOptionGroupForm();
     } catch (err) {
-      console.error(err);
-      setOptionFeedback({ status: 'error', message: 'Failed to create option. Please try again.' });
+      showFeedback('error', 'Failed to save option group');
+    }
+  };
+
+  const handleOptionGroupEdit = (id: string) => {
+    const grp = optionGroups.find((g: any) => g.id === id);
+    if (grp) {
+      setOptionGroupForm({
+        id: grp.id,
+        name: grp.name,
+        description: grp.description || '',
+        isRequired: grp.isRequired,
+        minSelect: grp.minSelect.toString(),
+        maxSelect: grp.maxSelect.toString()
+      });
+    }
+  };
+
+  const handleOptionGroupDelete = async (id: string) => {
+    if (confirm('Delete this option group?')) {
+      try {
+        await deleteOptionGroup(id);
+        showFeedback('success', 'Option group deleted');
+      } catch (err) {
+        showFeedback('error', 'Failed to delete option group');
+      }
+    }
+  };
+
+  const resetOptionGroupForm = () => {
+    setOptionGroupForm({
+      id: '', name: '', description: '', isRequired: false, minSelect: '0', maxSelect: '1'
+    });
+  };
+
+  // Option handlers
+  const handleOptionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const data = {
+        name: optionForm.name,
+        description: optionForm.description,
+        priceModifier: parseFloat(optionForm.priceModifier)
+      };
+      if (optionForm.id) {
+        await updateOption(optionForm.id, data);
+        showFeedback('success', 'Option updated successfully');
+      } else {
+        await createOption(data);
+        showFeedback('success', 'Option created successfully');
+      }
+      resetOptionForm();
+    } catch (err) {
+      showFeedback('error', 'Failed to save option');
+    }
+  };
+
+  const handleOptionEdit = (id: string) => {
+    const opt = options.find((o: any) => o.id === id);
+    if (opt) {
+      setOptionForm({
+        id: opt.id,
+        name: opt.name,
+        description: opt.description || '',
+        priceModifier: opt.priceModifier.toString()
+      });
+    }
+  };
+
+  const handleOptionDelete = async (id: string) => {
+    if (confirm('Delete this option?')) {
+      try {
+        await deleteOption(id);
+        showFeedback('success', 'Option deleted');
+      } catch (err) {
+        showFeedback('error', 'Failed to delete option');
+      }
+    }
+  };
+
+  const resetOptionForm = () => {
+    setOptionForm({ id: '', name: '', description: '', priceModifier: '0' });
+  };
+
+  // Order handler
+  const handleOrderStatusChange = async (orderId: string, status: OrderStatus) => {
+    try {
+      await updateOrderStatus(orderId, status);
+      showFeedback('success', 'Order status updated');
+    } catch (err) {
+      showFeedback('error', 'Failed to update order status');
     }
   };
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <header>
-        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Catalog management</h1>
-        <p>Review existing catalog data and quickly add new categories, products, option groups, and options.</p>
-        {isLoading && <p style={{ color: '#c2415c' }}>Loading catalog data…</p>}
-        {error && <p style={{ color: '#c2415c' }}>{error}</p>}
-      </header>
-      {disableCatalogActions && (
-        <p
-          style={{
-            background: '#fff5f8',
-            border: '1px solid #f6c4d5',
-            color: '#8e2945',
-            padding: '12px 16px',
-            borderRadius: 4
-          }}
-        >
-          You are signed in with read-only administrator access. The store owner account must be used to create or edit catalog
-          entries.
-        </p>
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="bg-linear-to-r from-secondary to-primary p-6 rounded-2xl text-primary-foreground shadow-lg">
+        <h1 className="text-3xl font-bold">Catalog Management</h1>
+        <p className="opacity-90 mt-1">Manage your products, categories, and orders</p>
+      </div>
+
+      {/* Feedback */}
+      {feedback && <FeedbackBanner type={feedback.type} message={feedback.message} />}
+
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/50 bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5" />
+          <span>{error}</span>
+        </div>
       )}
 
-      <section ref={sectionRefs.categories} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Categories</h2>
-        <ul style={{ marginBottom: 12, paddingLeft: 16 }}>
-          {categories.map((category) => (
-            <li key={category.id}>
-              <strong>{category.name}</strong>
-              {category.description ? ` – ${category.description}` : ''}
-            </li>
-          ))}
-          {categories.length === 0 && <li>No categories found.</li>}
-        </ul>
-        <form onSubmit={handleCreateCategory}>
-          <fieldset
-            disabled={disableCatalogActions}
-            style={{ display: 'flex', flexDirection: 'column', gap: 8, border: 'none', padding: 0, margin: 0 }}
-          >
-            <label style={{ fontSize: 14 }}>
-              Name
-              <input
-                type="text"
-                value={categoryForm.name}
-                onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14 }}>
-              Description
-              <textarea
-                value={categoryForm.description}
-                onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
-                rows={2}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <button type="submit" style={{ alignSelf: 'flex-start', background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer' }}>
-              Create category
-            </button>
-            {categoryFeedback && (
-              <p style={{ color: categoryFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{categoryFeedback.message}</p>
-            )}
-          </fieldset>
-        </form>
-      </section>
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-border overflow-x-auto">
+        <TabButton active={activeTab === 'products'} onClick={() => setActiveTab('products')}>
+          Products
+        </TabButton>
+        <TabButton active={activeTab === 'categories'} onClick={() => setActiveTab('categories')}>
+          Categories
+        </TabButton>
+        <TabButton active={activeTab === 'option-groups'} onClick={() => setActiveTab('option-groups')}>
+          Option Groups
+        </TabButton>
+        <TabButton active={activeTab === 'options'} onClick={() => setActiveTab('options')}>
+          Options
+        </TabButton>
+        <TabButton active={activeTab === 'orders'} onClick={() => setActiveTab('orders')}>
+          Orders
+        </TabButton>
+      </div>
 
-      <section ref={sectionRefs.products} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Products</h2>
-        <ul style={{ marginBottom: 12, paddingLeft: 16 }}>
-          {products.map((product) => (
-            <li key={product.id}>
-              <strong>{product.name}</strong> – ${product.basePrice.toFixed(2)} (Category: {product.category?.name ?? 'Unassigned'} · Option groups: {product.optionGroups.length} · Store: {product.storeKey === 'weekend-market' ? 'Weekend market stall' : 'Flagship boutique'})
-            </li>
-          ))}
-          {products.length === 0 && <li>No products found.</li>}
-        </ul>
-        <form onSubmit={handleCreateProduct}>
-          <fieldset
-            disabled={disableCatalogActions}
-            style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', border: 'none', padding: 0, margin: 0 }}
-          >
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Name
-              <input
-                type="text"
-                value={productForm.name}
-                onChange={(event) => setProductForm((current) => ({ ...current, name: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Base price
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={productForm.basePrice}
-                onChange={(event) => setProductForm((current) => ({ ...current, basePrice: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Category
-              <select
-                value={productForm.categoryId}
-                onChange={(event) => setProductForm((current) => ({ ...current, categoryId: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              >
-                <option value="">Select a category…</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Storefront
-              <select
-                value={productForm.storeKey}
-                onChange={(event) => setProductForm((current) => ({ ...current, storeKey: event.target.value as StoreKey }))}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              >
-                <option value="flagship">Flagship boutique</option>
-                <option value="weekend-market">Weekend market stall</option>
-              </select>
-            </label>
-            <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
-              Description
-              <textarea
-                value={productForm.description}
-                onChange={(event) => setProductForm((current) => ({ ...current, description: event.target.value }))}
-                rows={2}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
-              Image URL
-              <input
-                type="url"
-                value={productForm.imageUrl}
-                onChange={(event) => setProductForm((current) => ({ ...current, imageUrl: event.target.value }))}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <button
-              type="submit"
-              style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer', justifySelf: 'flex-start' }}
-            >
-              Create product
-            </button>
-          </fieldset>
-        </form>
-        {productFeedback && (
-          <p style={{ marginTop: 8, color: productFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{productFeedback.message}</p>
-        )}
-      </section>
+      {/* Content */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left Panel - Forms */}
+        <div className="lg:col-span-1">
+          {activeTab === 'categories' && (
+            <CategoryForm
+              form={categoryForm}
+              setForm={setCategoryForm}
+              onSubmit={handleCategorySubmit}
+              onCancel={resetCategoryForm}
+              loading={loading}
+            />
+          )}
 
-      <section ref={sectionRefs['option-groups']} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Option groups</h2>
-        {products.map((product) => (
-          <div key={product.id} style={{ marginBottom: 12 }}>
-            <h3 style={{ marginBottom: 4 }}>{product.name}</h3>
-            <ul style={{ paddingLeft: 16 }}>
-              {product.optionGroups.map((group) => (
-                <li key={group.id}>
-                  <strong>{group.name}</strong> – {group.isRequired ? 'Required' : 'Optional'} (min {group.minSelect}, max {group.maxSelect || '∞'})
-                </li>
-              ))}
-              {product.optionGroups.length === 0 && <li>No option groups yet.</li>}
-            </ul>
-          </div>
-        ))}
-        {products.length === 0 && <p>No products available yet.</p>}
-        <form onSubmit={handleCreateOptionGroup}>
-          <fieldset
-            disabled={disableCatalogActions}
-            style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', border: 'none', padding: 0, margin: 0 }}
-          >
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Product
-              <select
-                value={optionGroupForm.productId}
-                onChange={(event) => setOptionGroupForm((current) => ({ ...current, productId: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              >
-                <option value="">Select a product…</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Name
-              <input
-                type="text"
-                value={optionGroupForm.name}
-                onChange={(event) => setOptionGroupForm((current) => ({ ...current, name: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Minimum selections
-              <input
-                type="number"
-                min="0"
-                value={optionGroupForm.minSelect}
-                onChange={(event) => setOptionGroupForm((current) => ({ ...current, minSelect: event.target.value }))}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Maximum selections (0 for unlimited)
-              <input
-                type="number"
-                min="0"
-                value={optionGroupForm.maxSelect}
-                onChange={(event) => setOptionGroupForm((current) => ({ ...current, maxSelect: event.target.value }))}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Description
-              <textarea
-                value={optionGroupForm.description}
-                onChange={(event) => setOptionGroupForm((current) => ({ ...current, description: event.target.value }))}
-                rows={2}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, alignSelf: 'center', display: 'flex', gap: 8, marginTop: 24 }}>
-              <input
-                type="checkbox"
-                checked={optionGroupForm.isRequired}
-                onChange={(event) => setOptionGroupForm((current) => ({ ...current, isRequired: event.target.checked }))}
-              />
-              Required group
-            </label>
-            <button
-              type="submit"
-              style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer', justifySelf: 'flex-start' }}
-            >
-              Create option group
-            </button>
-          </fieldset>
-        </form>
-        {optionGroupFeedback && (
-          <p style={{ marginTop: 8, color: optionGroupFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{optionGroupFeedback.message}</p>
-        )}
-      </section>
+          {activeTab === 'products' && (
+            <ProductForm
+              form={productForm}
+              setForm={setProductForm}
+              categories={categories}
+              onSubmit={handleProductSubmit}
+              onCancel={resetProductForm}
+              loading={loading}
+            />
+          )}
 
-      <section ref={sectionRefs.options} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Options</h2>
-        {products.map((product) => (
-          <div key={product.id} style={{ marginBottom: 12 }}>
-            <h3 style={{ marginBottom: 4 }}>{product.name}</h3>
-            {product.optionGroups.map((group) => (
-              <div key={group.id} style={{ marginBottom: 8, paddingLeft: 16 }}>
-                <h4 style={{ marginBottom: 4 }}>{group.name}</h4>
-                <ul style={{ paddingLeft: 16 }}>
-                  {group.options.map((option) => (
-                    <li key={option.id}>
-                      <strong>{option.name}</strong> – ${option.priceModifier.toFixed(2)}
-                    </li>
-                  ))}
-                  {group.options.length === 0 && <li>No options yet.</li>}
-                </ul>
-              </div>
-            ))}
-            {product.optionGroups.length === 0 && <p style={{ paddingLeft: 16 }}>No option groups available.</p>}
-          </div>
-        ))}
-        {products.length === 0 && <p>No products available yet.</p>}
-        <form onSubmit={handleCreateOption}>
-          <fieldset
-            disabled={disableCatalogActions}
-            style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', border: 'none', padding: 0, margin: 0 }}
-          >
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Option group
-              <select
-                value={optionForm.optionGroupId}
-                onChange={(event) => setOptionForm((current) => ({ ...current, optionGroupId: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              >
-                <option value="">Select an option group…</option>
-                {optionGroups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.productName} – {group.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Name
-              <input
-                type="text"
-                value={optionForm.name}
-                onChange={(event) => setOptionForm((current) => ({ ...current, name: event.target.value }))}
-                required
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Price modifier
-              <input
-                type="number"
-                step="0.01"
-                value={optionForm.priceModifier}
-                onChange={(event) => setOptionForm((current) => ({ ...current, priceModifier: event.target.value }))}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
-              Description
-              <textarea
-                value={optionForm.description}
-                onChange={(event) => setOptionForm((current) => ({ ...current, description: event.target.value }))}
-                rows={2}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              />
-            </label>
-            <button
-              type="submit"
-              style={{ background: '#c2415c', color: '#fff', padding: '6px 12px', border: 'none', cursor: disableCatalogActions ? 'not-allowed' : 'pointer', justifySelf: 'flex-start' }}
-            >
-              Create option
-            </button>
-          </fieldset>
-        </form>
-        {optionFeedback && (
-          <p style={{ marginTop: 8, color: optionFeedback.status === 'success' ? '#2f855a' : '#c2415c' }}>{optionFeedback.message}</p>
-        )}
-      </section>
-    </section>
+          {activeTab === 'option-groups' && (
+            <OptionGroupForm
+              form={optionGroupForm}
+              setForm={setOptionGroupForm}
+              onSubmit={handleOptionGroupSubmit}
+              onCancel={resetOptionGroupForm}
+              loading={loading}
+            />
+          )}
+
+          {activeTab === 'options' && (
+            <OptionForm
+              form={optionForm}
+              setForm={setOptionForm}
+              onSubmit={handleOptionSubmit}
+              onCancel={resetOptionForm}
+              loading={loading}
+            />
+          )}
+
+          {activeTab === 'orders' && (
+            <div className="bg-surface border border-border rounded-xl p-6">
+              <p className="text-muted-foreground text-sm">
+                Orders are read-only. You can only update their status in the list.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Right Panel - Lists */}
+        <div className="lg:col-span-2">
+          {activeTab === 'categories' && (
+            <CategoryList
+              categories={categories}
+              onEdit={handleCategoryEdit}
+              onDelete={handleCategoryDelete}
+              loading={loading}
+            />
+          )}
+
+          {activeTab === 'products' && (
+            <ProductList
+              products={products}
+              onEdit={handleProductEdit}
+              onDelete={handleProductDelete}
+              loading={loading}
+            />
+          )}
+
+          {activeTab === 'option-groups' && (
+            <OptionGroupList
+              optionGroups={optionGroups}
+              onEdit={handleOptionGroupEdit}
+              onDelete={handleOptionGroupDelete}
+              loading={loading}
+            />
+          )}
+
+          {activeTab === 'options' && (
+            <OptionList
+              options={options}
+              onEdit={handleOptionEdit}
+              onDelete={handleOptionDelete}
+              loading={loading}
+            />
+          )}
+
+          {activeTab === 'orders' && (
+            <OrderList
+              orders={orders}
+              onStatusChange={handleOrderStatusChange}
+              loading={loading}
+            />
+          )}
+        </div>
+      </div>
+    </div>
   );
-};
+}

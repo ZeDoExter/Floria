@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchProductDetail, ProductDetail } from '../api/products';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
+import { useCartStore } from '../stores/cartStore';
+import { useAuthStore } from '../stores/authStore';
 import { canPlaceOrders } from '../utils/auth';
 
 export const ProductDetailPage = () => {
@@ -14,8 +14,8 @@ export const ProductDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [groupErrors, setGroupErrors] = useState<Record<string, string | null>>({});
-  const { addItem } = useCart();
-  const { user } = useAuth();
+  const { add: addItem } = useCartStore();
+  const { user } = useAuthStore();
   const canOrder = user ? canPlaceOrders(user.role) : true;
 
   useEffect(() => {
@@ -141,81 +141,132 @@ export const ProductDetailPage = () => {
   };
 
   if (isLoading) {
-    return <p>Loading arrangement...</p>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
   }
 
   if (error) {
-    return <p style={{ color: '#c2415c' }}>{error}</p>;
+    return (
+      <div className="bg-error/10 border-l-4 border-error text-error p-6 rounded-xl">
+        <p className="font-medium">{error}</p>
+      </div>
+    );
   }
 
   if (!product) {
-    return <p>Product not found.</p>;
+    return (
+      <div className="bg-card rounded-2xl shadow-md p-8 text-center">
+        <p className="text-muted-foreground text-lg">Product not found.</p>
+      </div>
+    );
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <h1 style={{ fontSize: 28, marginBottom: 6, color: '#c2415c' }}>{product.name}</h1>
-        {product.description && <p style={{ marginBottom: 6 }}>{product.description}</p>}
-        <p style={{ fontSize: 20, fontWeight: 600 }}>${price.toFixed(2)}</p>
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Product Header */}
+      <div className="bg-card rounded-3xl shadow-lg p-6 space-y-3">
+        <h1 className="text-3xl font-bold text-foreground">{product.name}</h1>
+        {product.description && (
+          <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+        )}
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm text-muted-foreground">Price:</span>
+          <span className="text-3xl font-bold text-primary">฿{price.toFixed(2)}</span>
+        </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+      {/* Option Groups */}
+      <div className="space-y-4">
         {product.optionGroups.map((group) => (
-          <div key={group.id} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 4, color: '#c2415c' }}>{group.name}</h2>
-            {group.description && <p style={{ fontSize: 14, marginBottom: 4 }}>{group.description}</p>}
-            <p style={{ fontSize: 12, color: '#555' }}>
-              {group.isRequired ? 'Required' : 'Optional'} – select between {group.minSelect} and{' '}
-              {group.maxSelect || group.options.length}
-            </p>
-            <ul style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, padding: 0 }}>
+          <div key={group.id} className="bg-card rounded-2xl shadow-md p-6 space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">{group.name}</h2>
+              {group.description && (
+                <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                <span className={group.isRequired ? "text-primary font-medium" : ""}>
+                  {group.isRequired ? 'Required' : 'Optional'}
+                </span>
+                {' · '}Select between {group.minSelect} and {group.maxSelect || group.options.length}
+              </p>
+            </div>
+
+            <ul className="space-y-2">
               {group.options.map((option) => {
                 const isSelected = selectedOptions[group.id]?.includes(option.id);
                 return (
-                  <li key={option.id} style={{ listStyle: 'none' }}>
+                  <li key={option.id}>
                     <label
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        border: '1px solid #eee',
-                        padding: '8px 12px',
-                        background: isSelected ? '#fde4ec' : '#fafafa',
-                        cursor: 'pointer'
-                      }}
+                      className={`
+                        flex items-center justify-between gap-4 p-4 rounded-xl border-2 
+                        cursor-pointer transition-all
+                        ${isSelected 
+                          ? 'border-primary bg-primary/5 shadow-sm' 
+                          : 'border-border bg-white hover:border-primary/50 hover:shadow-sm'
+                        }
+                      `}
                     >
-                      <span>
-                        <span style={{ fontWeight: 600 }}>{option.name}</span>
-                        {option.description && <p style={{ fontSize: 12 }}>{option.description}</p>}
-                      </span>
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleOption(group, option.id)} />
+                      <div className="flex-1">
+                        <span className="font-semibold text-foreground">{option.name}</span>
+                        {option.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                        )}
+                        {option.priceModifier !== 0 && (
+                          <p className="text-sm text-primary font-medium mt-1">
+                            {option.priceModifier > 0 ? '+' : ''}฿{option.priceModifier.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleOption(group, option.id)}
+                        className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                      />
                     </label>
                   </li>
                 );
               })}
             </ul>
-            {groupErrors[group.id] && <p style={{ marginTop: 8, fontSize: 12, color: '#c2415c' }}>{groupErrors[group.id]}</p>}
+
+            {groupErrors[group.id] && (
+              <p className="text-sm text-error font-medium bg-error/10 p-3 rounded-lg">
+                {groupErrors[group.id]}
+              </p>
+            )}
           </div>
         ))}
       </div>
-      {formError && <p style={{ color: '#c2415c' }}>{formError}</p>}
-      {!canOrder && <p style={{ color: '#c2415c' }}>Store owners can manage products but cannot purchase from their own shop.</p>}
+
+      {/* Error Messages */}
+      {formError && (
+        <div className="bg-error/10 border-l-4 border-error text-error p-4 rounded-lg">
+          <p className="text-sm font-medium">{formError}</p>
+        </div>
+      )}
+
+      {!canOrder && (
+        <div className="bg-warning/10 border-l-4 border-warning text-warning p-4 rounded-lg">
+          <p className="text-sm font-medium">
+            Store owners can manage products but cannot purchase from their own shop.
+          </p>
+        </div>
+      )}
+
+      {/* Add to Cart Button */}
       <button
         type="button"
         onClick={handleAddToCart}
         disabled={!canOrder}
-        style={{
-          background: '#c2415c',
-          color: '#fff',
-          padding: '8px 16px',
-          border: 'none',
-          cursor: !canOrder ? 'not-allowed' : 'pointer',
-          opacity: !canOrder ? 0.6 : 1
-        }}
+        className="w-full bg-primary text-primary-foreground px-6 py-4 rounded-2xl font-bold text-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
       >
         Add to cart
       </button>
-    </section>
+    </div>
   );
 };
 

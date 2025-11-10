@@ -1,1 +1,57 @@
 @import "tailwindcss";
+
+/* Base theming using Figma-inspired design */
+body {
+	background: var(--background);
+	color: var(--foreground);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+/* Figma-inspired CSS variables */
+:root {
+	--background: #F5D7DB;       /* Soft pink background */
+	--foreground: #2D2D2D;       /* Charcoal text */
+	/* New names to avoid potential collisions with Tailwind bg utilities */
+	--surface: #F5D7DB;          /* Mirrors --background */
+	--text: #2D2D2D;             /* Mirrors --foreground */
+	--card: #FFF9F0;             /* Cream cards */
+	--card-foreground: #2D2D2D;
+	--primary: #B5D99C;          /* Pistachio green */
+	--primary-foreground: #2D4A1F;
+	--secondary: #8FB578;        /* Darker green */
+	--secondary-foreground: #FFF9F0;
+	--accent: #F4C47F;           /* Warm yellow */
+	--accent-foreground: #5A3A1A;
+	--muted: #F5E8D8;            /* Light beige */
+	--muted-foreground: #6B6B6B; /* Gray text */
+	--border: #E8E8E8;           /* Light borders */
+	--success: #7BC96F;
+	--error: #E78B8B;
+	--destructive: #E78B8B;
+	--destructive-foreground: #FFFFFF;
+}
+
+.dark {
+	--background: #2D2D2D;
+	--foreground: #F5F5F5;
+	/* New names mirroring dark values */
+	--surface: #2D2D2D;
+	--text: #F5F5F5;
+	--card: #3D3D3D;
+	--card-foreground: #F5F5F5;
+	--primary: #8FB578;
+	--primary-foreground: #F5F5F5;
+	--secondary: #6B9558;
+	--secondary-foreground: #F5F5F5;
+	--accent: #D4A362;
+	--accent-foreground: #F5F5F5;
+	--muted: #4D4D4D;
+	--muted-foreground: #B5B5B5;
+	--border: #4D4D4D;
+}
+
+/* Helper gradient classes using CSS variables */
+.brand-hero {
+	background: linear-gradient(to right, var(--primary), var(--secondary));
+	color: var(--primary-foreground);
+}

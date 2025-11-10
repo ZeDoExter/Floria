@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProductDetail, ProductDetail } from '../api/products';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
+import { useCartStore } from '../stores/cartStore';
+import { useAuthStore } from '../stores/authStore';
 import { canPlaceOrders } from '../utils/auth';
 
 export const CartPage = () => {
-  const { cartItems, updateQuantity, removeItem } = useCart();
+  const { items: cartItems, updateQty: updateQuantity, remove: removeItem } = useCartStore();
   const subtotal = cartItems.reduce((total, item) => total + (item.unitPrice ?? 0) * item.quantity, 0);
   const [productDetails, setProductDetails] = useState<Record<string, ProductDetail>>({});
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const canOrder = user ? canPlaceOrders(user.role) : true;
 
   useEffect(() => {
@@ -88,72 +88,93 @@ export const CartPage = () => {
   }, [productDetails]);
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <header>
-        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Your cart</h1>
-        <p>Review your arrangement before checking out.</p>
-      </header>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="bg-card rounded-3xl shadow-lg p-6">
+        <h1 className="text-3xl font-bold text-foreground">Your cart</h1>
+        <p className="text-muted-foreground mt-1">Review your arrangement before checking out.</p>
+      </div>
+
       {cartItems.length === 0 ? (
-        <p>
-          Your cart is empty.{' '}
-          <Link to="/" style={{ color: '#c2415c' }}>
-            Explore bouquets
-          </Link>
-        </p>
+        <div className="bg-card rounded-2xl shadow-md p-12 text-center space-y-4">
+          <div className="text-6xl">🛒</div>
+          <p className="text-muted-foreground text-lg">
+            Your cart is empty.{' '}
+            <Link to="/" className="text-primary font-semibold hover:underline">
+              Explore bouquets
+            </Link>
+          </p>
+        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="space-y-4">
+          {/* Cart Items */}
           {cartItems.map((item) => (
-            <div key={item.productId} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                  <p style={{ fontWeight: 600 }}>{item.productName ?? 'Custom Bouquet'}</p>
-                  <p style={{ fontSize: 14, color: '#555' }}>Selected options: {describeSelectedOptions(item.productId, item.selectedOptionIds)}</p>
+            <div key={`${item.productId}-${item.selectedOptionIds.join(',')}`} className="bg-card rounded-2xl shadow-md p-6 space-y-4">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg text-foreground">{item.productName ?? 'Custom Bouquet'}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {describeSelectedOptions(item.productId, item.selectedOptionIds)}
+                  </p>
                 </div>
-                <button type="button" style={{ color: '#c2415c', cursor: 'pointer' }} onClick={() => removeItem(item.productId, item.selectedOptionIds)}>
-                  Remove
+                <button
+                  type="button"
+                  onClick={() => removeItem(item.productId, item.selectedOptionIds)}
+                  className="text-error hover:bg-error/10 p-2 rounded-lg transition-colors"
+                  aria-label="Remove item"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </button>
               </div>
-              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: 14 }}>
-                  Quantity
+
+              <div className="flex justify-between items-center pt-4 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <label htmlFor={`qty-${item.productId}`} className="text-sm font-medium text-foreground">Quantity:</label>
                   <input
+                    id={`qty-${item.productId}`}
                     type="number"
                     min={1}
                     value={item.quantity}
-                    onChange={(event) => updateQuantity(item.productId, Number(event.target.value), item.selectedOptionIds)}
-                    style={{ marginLeft: 8, width: 80, padding: '4px 8px' }}
+                    onChange={(e) => updateQuantity(item.productId, item.selectedOptionIds, Number(e.target.value))}
+                    className="w-20 px-3 py-2 rounded-lg border-2 border-border bg-white text-center font-semibold focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    aria-label="Quantity"
                   />
-                </label>
-                <p style={{ fontWeight: 600 }}>${((item.unitPrice ?? 0) * item.quantity).toFixed(2)}</p>
+                </div>
+                <p className="text-xl font-bold text-primary">
+                  ฿{((item.unitPrice ?? 0) * item.quantity).toFixed(2)}
+                </p>
               </div>
             </div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: 12 }}>
-            <p style={{ fontSize: 18, fontWeight: 600 }}>Subtotal</p>
-            <p style={{ fontSize: 18, fontWeight: 600, color: '#c2415c' }}>${subtotal.toFixed(2)}</p>
+
+          {/* Subtotal */}
+          <div className="bg-card rounded-2xl shadow-md p-6">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold text-foreground">Subtotal</span>
+              <span className="text-3xl font-bold text-primary">฿{subtotal.toFixed(2)}</span>
+            </div>
           </div>
+
+          {/* Checkout Button */}
           {canOrder ? (
             <Link
               to="/checkout"
-              style={{
-                display: 'inline-block',
-                textAlign: 'center',
-                background: '#c2415c',
-                color: '#fff',
-                padding: '8px 16px',
-                textDecoration: 'none'
-              }}
+              className="block w-full bg-primary text-primary-foreground px-6 py-4 rounded-2xl font-bold text-center hover:opacity-90 transition-all shadow-lg text-lg"
             >
               Proceed to checkout
             </Link>
           ) : (
-            <p style={{ color: '#c2415c', fontSize: 14 }}>
-              Store owners cannot proceed to checkout. Switch to a customer account to place an order.
-            </p>
+            <div className="bg-error/10 border-l-4 border-error text-error p-4 rounded-lg">
+              <p className="font-medium">
+                Store owners cannot proceed to checkout. Switch to a customer account to place an order.
+              </p>
+            </div>
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 };
 

@@ -6,14 +6,15 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { OrderHistoryPage } from './pages/OrderHistoryPage';
 import { NavBar } from './components/NavBar';
-import { AdminCatalogPage } from './pages/AdminCatalogPage';
-import { AdminUsersPage } from './pages/AdminUsersPage';
+import OwnerCatalogPage  from './pages/AdminCatalogPage';
+import Authentication from './pages/Authentication';
+import "./App.css";
 
 function App() {
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f5f5', color: '#1f1f1f' }}>
+  <div className="min-h-screen bg-surface text-foreground">
       <NavBar />
-      <main style={{ margin: '0 auto', maxWidth: 960, padding: 24 }}>
+      <main className="mx-auto max-w-[960px] p-6">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/products/:productId" element={<ProductDetailPage />} />
@@ -21,9 +22,9 @@ function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/orders" element={<OrderHistoryPage />} />
-          <Route path="/admin/catalog" element={<AdminCatalogPage />} />
-          <Route path="/admin/catalog/:section" element={<AdminCatalogPage />} />
-          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/catalog" element={<OwnerCatalogPage />} />
+          <Route path="/admin/catalog/:section" element={<OwnerCatalogPage />} />
+          <Route path="/auth" element={<Authentication />} />
         </Routes>
       </main>
     </div>
