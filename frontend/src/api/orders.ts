@@ -1,8 +1,6 @@
 import { apiClient } from './client';
 import { CartItemInput } from './cart';
 
-export type StoreKey = 'flagship' | 'weekend-market';
-
 export const ORDER_STATUS_OPTIONS = [
   'PENDING',
   'PLACED',
@@ -21,20 +19,38 @@ export type CheckoutPayload = {
   deliveryDate?: string;
 };
 
+export type OrderItemResponse = {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  optionSnapshot: {
+    selectedOptions?: Array<{
+      id: string;
+      name: string;
+      priceModifier: number;
+    }>;
+    selectedOptionIds?: string[];
+    imageUrl?: string;
+  };
+};
+
 export type OrderResponse = {
   id: string;
   totalAmount: number;
   status: OrderStatus;
   createdAt: string;
-  storeKey: StoreKey;
+  notes: string | null;
+  deliveryDate: string | null;
   customerEmail?: string | null;
+  items?: OrderItemResponse[];
 };
 
 const normalizeOrder = (order: any): OrderResponse => ({
   ...order,
   totalAmount: Number(order.totalAmount ?? 0),
-  status: (order.status as OrderStatus) ?? 'PENDING',
-  storeKey: (order.storeKey as StoreKey) ?? 'flagship'
+  status: (order.status as OrderStatus) ?? 'PENDING'
 });
 
 export const submitOrder = async (payload: CheckoutPayload, token: string) => {
@@ -48,6 +64,19 @@ export const submitOrder = async (payload: CheckoutPayload, token: string) => {
 
 export const fetchOrders = async (token: string) => {
   const response = await apiClient.get('/orders', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const orders = (response.data as { orders?: unknown })?.orders;
+  if (!Array.isArray(orders)) {
+    return [];
+  }
+
+  return orders.map(normalizeOrder);
+};
+
+export const fetchCustomerOrders = async (token: string) => {
+  const response = await apiClient.get('/orders/customer-orders', {
     headers: { Authorization: `Bearer ${token}` }
   });
 

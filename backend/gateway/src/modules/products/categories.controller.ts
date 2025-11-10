@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, Query } from '@nestjs/common';
 import { ProxyService } from '../proxy/proxy.service.js';
 import { RequestWithUser } from '../../common/auth.middleware.js';
 
@@ -7,8 +7,8 @@ export class CategoriesController {
   constructor(private readonly proxy: ProxyService) {}
 
   @Get()
-  list(@Req() req: RequestWithUser) {
-    return this.proxy.get('product', '/categories', { user: req.user });
+  list(@Req() req: RequestWithUser, @Query() query: Record<string, string>) {
+    return this.proxy.get('product', '/categories', { user: req.user, params: query });
   }
 
   @Post()

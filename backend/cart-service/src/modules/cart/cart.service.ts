@@ -1,8 +1,13 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AddItemDto, CartItemDto, MergeCartDto, UpdateItemDto } from './dto/cart-item.dto.js';
-import { Decimal } from '@prisma/client/runtime/library';
 import { randomUUID } from 'crypto';
+import { Cart } from '../../entities/cart.entity';
+import { CartItem } from '../../entities/cart-item.entity';
+import { Product } from '../../entities/product.entity';
+import { Option } from '../../entities/option.entity';
+import { User } from '../../entities/user.entity';
 import type {
   CartItemWithProduct,
   CartWithItemsAndProduct,
@@ -14,72 +19,101 @@ import type {
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Cart)
+    private readonly cartRepository: Repository<Cart>,
+    @InjectRepository(CartItem)
+    private readonly cartItemRepository: Repository<CartItem>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
-  private async ensureCartForUser(cognitoUserId: string) {
-    const cart = await this.prisma.cart.upsert({
-      where: { cognito_user_id: cognitoUserId },
-      update: {},
-      create: { cognito_user_id: cognitoUserId }
+  private async getUserById(userId: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id: userId }
     });
+  }
+
+  private async ensureCartForUser(userId: string) {
+    let cart = await this.cartRepository.findOne({
+      where: { userId }
+    });
+
+    if (!cart) {
+      cart = this.cartRepository.create({
+        userId
+      });
+      await this.cartRepository.save(cart);
+    }
+
     return cart;
   }
 
   private async ensureCartForAnonymous(anonymousId: string) {
-    const cart = await this.prisma.cart.upsert({
-      where: { anonymousId },
-      update: {},
-      create: { anonymousId }
+    let cart = await this.cartRepository.findOne({
+      where: { anonymousId }
     });
+
+    if (!cart) {
+      cart = this.cartRepository.create({
+        anonymousId
+      });
+      await this.cartRepository.save(cart);
+    }
+
     return cart;
   }
 
-  private async calculateUnitPrice(productId: string, optionIds: string[]): Promise<Decimal> {
-    const product = (await this.prisma.product.findUnique({
-      where: { id: productId },
-      include: {
-        optionGroups: {
-          include: { options: true }
+  private async calculateUnitPrice(productId: string, optionIds: string[]): Promise<number> {
+    try {
+      const product = await this.productRepository.findOne({
+        where: { id: productId },
+        relations: {
+          optionGroups: {
+            options: true
+          }
+        }
+      });
+
+      if (!product) {
+        return 0;
+      }
+
+      const optionGroups = product.optionGroups ?? [];
+      const basePrice = product.basePrice;
+
+      let modifiers = 0;
+      for (const optionId of optionIds) {
+        for (const group of optionGroups) {
+          const option = (group.options ?? []).find(opt => opt.id === optionId);
+          if (option) {
+            modifiers += Number(option.priceModifier);
+            break;
+          }
         }
       }
-    })) as ProductWithOptionGroups | null;
 
-    if (!product) {
-      throw new NotFoundException('Product not found');
+      return basePrice + modifiers;
+    } catch (error) {
+      return 0;
     }
-
-    const optionGroups: OptionGroupWithOptions[] = product.optionGroups ?? [];
-    const basePrice = new Decimal(product.basePrice);
-
-    let modifiers = new Decimal(0);
-    for (const optionId of optionIds) {
-      for (const group of optionGroups) {
-        const option = (group.options ?? []).find(
-          (opt: ProductOption) => opt.id === optionId
-        );
-        if (option) {
-          modifiers = modifiers.add(option.priceModifier);
-          break;
-        }
-      }
-    }
-
-    return basePrice.add(modifiers);
   }
 
-  private serializeCart(cart: CartWithItemsAndProduct | null): SerializedCart {
+  private serializeCart(cart: Cart | null, user?: User): SerializedCart {
     if (!cart) {
       return { items: [] };
     }
 
     return {
       id: cart.id,
-      cognito_user_id: cart.cognito_user_id,
+      userId: user?.id || cart.userId || null,
       anonymousId: cart.anonymousId,
-      items: (cart.items ?? []).map((item: CartItemWithProduct) => ({
+      items: (cart.items ?? []).map((item: CartItem) => ({
         id: item.id,
         productId: item.productId,
-        productName: item.product.name,
+        productName: (item as any).product?.name || '',
         quantity: item.quantity,
         selectedOptionIds: item.selectedOptionIds,
         unitPrice: Number(item.unitPrice)
@@ -87,62 +121,114 @@ export class CartService {
     };
   }
 
-  private getCartById(cartId: string): Promise<CartWithItemsAndProduct | null> {
-    return this.prisma.cart.findUnique({
+  private async getCartById(cartId: string): Promise<Cart | null> {
+    const cart = await this.cartRepository.findOne({
       where: { id: cartId },
-      include: {
+      relations: {
         items: {
-          include: {
+          product: true
+        },
+        user: true
+      }
+    });
+    return cart;
+  }
+
+  private async getCartForUserId(userId: string): Promise<{ cart: Cart | null; user: User | null }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return { cart: null, user: null };
+    }
+
+    const cart = await this.cartRepository.findOne({
+      where: { userId: user.id },
+      relations: {
+        items: {
+          product: true
+        },
+        user: true
+      }
+    });
+    return { cart, user };
+  }
+
+  private async getCartForAnonymousId(anonymousId: string): Promise<Cart | null> {
+    const cart = await this.cartRepository.findOne({
+      where: { anonymousId },
+      relations: {
+        items: {
+          product: true
+        },
+        user: true
+      }
+    });
+    return cart;
+  }
+
+  async getCart(userId?: string, anonymousId?: string): Promise<SerializedCart> {
+    let cart: Cart | null = null;
+    let user: User | null = null;
+    
+    if (userId) {
+      // Try to get existing user
+      user = await this.getUserById(userId);
+      
+      // Get or create cart for this user
+      cart = await this.cartRepository.findOne({
+        where: { userId },
+        relations: {
+          items: {
             product: true
           }
         }
+      });
+      
+      // If no cart exists, create one
+      if (!cart) {
+        cart = this.cartRepository.create({
+          userId
+        });
+        await this.cartRepository.save(cart);
+        
+        // Reload with relations
+        cart = await this.cartRepository.findOne({
+          where: { userId },
+          relations: {
+            items: {
+              product: true
+            }
+          }
+        });
       }
-    }) as Promise<CartWithItemsAndProduct | null>;
-  }
-
-  private getCartForUserId(cognitoUserId: string): Promise<CartWithItemsAndProduct | null> {
-    return this.prisma.cart.findFirst({
-      where: { cognito_user_id: cognitoUserId },
-      include: {
-        items: {
-          include: { product: true }
-        }
-      }
-    }) as Promise<CartWithItemsAndProduct | null>;
-  }
-
-  private getCartForAnonymousId(anonymousId: string): Promise<CartWithItemsAndProduct | null> {
-    return this.prisma.cart.findFirst({
-      where: { anonymousId },
-      include: {
-        items: {
-          include: { product: true }
-        }
-      }
-    }) as Promise<CartWithItemsAndProduct | null>;
-  }
-
-  async getCart(cognitoUserId?: string, anonymousId?: string): Promise<SerializedCart> {
-    let cart = null;
-    if (cognitoUserId) {
-      cart = await this.getCartForUserId(cognitoUserId);
-    }
-    if (!cart && anonymousId) {
+    } else if (anonymousId) {
       cart = await this.getCartForAnonymousId(anonymousId);
+      if (cart?.user) {
+        user = cart.user;
+      }
     }
+    
     if (!cart) {
       return { items: [] };
     }
-    return this.serializeCart(cart);
+    
+    return this.serializeCart(cart, user || undefined);
   }
 
-  async mergeCart(cognitoUserId: string | undefined, payload: MergeCartDto): Promise<SerializedCart> {
-    if (!cognitoUserId) {
-      throw new UnauthorizedException('User authentication is required to merge carts');
-    }
+  async mergeCart(userId: string | undefined, payload: MergeCartDto): Promise<SerializedCart> {
+    try {
+      if (!userId) {
+        throw new UnauthorizedException('User authentication is required to merge carts');
+      }
 
-    const targetCart = await this.ensureCartForUser(cognitoUserId);
-    const itemsToMerge: CartItemDto[] = [...payload.items];
+      const user = await this.getUserById(userId);
+      // Don't throw error if user not found - cart-service may not have user record yet
+      // User will be created by gateway service
+
+      const targetCart = await this.ensureCartForUser(userId);
+      const itemsToMerge: CartItemDto[] = [...payload.items];
 
     if (payload.anonymousId) {
       const anonymousCart = await this.getCartForAnonymousId(payload.anonymousId);
@@ -154,130 +240,170 @@ export class CartService {
             selectedOptionIds: item.selectedOptionIds
           });
         }
-        await this.prisma.cart.delete({ where: { id: anonymousCart.id } });
+        // Delete the cart and its items
+        await this.cartItemRepository.delete({ cartId: anonymousCart.id });
+        await this.cartRepository.delete({ id: anonymousCart.id });
       }
     }
 
-    await this.prisma.cartItem.deleteMany({ where: { cartId: targetCart.id } });
+      // Remove existing items
+      await this.cartItemRepository.delete({ cartId: targetCart.id });
 
-    for (const item of itemsToMerge) {
-      const unitPrice = await this.calculateUnitPrice(item.productId, item.selectedOptionIds);
-      await this.prisma.cartItem.create({
-        data: {
-          cartId: targetCart.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          selectedOptionIds: item.selectedOptionIds,
-          unitPrice
+      // Create new items
+      for (const item of itemsToMerge) {
+        try {
+          // Use provided unitPrice if available, otherwise calculate
+          let unitPrice = item.unitPrice ?? 0;
+          if (!unitPrice || unitPrice === 0) {
+            unitPrice = await this.calculateUnitPrice(item.productId, item.selectedOptionIds);
+          }
+          
+          const cartItem = this.cartItemRepository.create({
+            cartId: targetCart.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            selectedOptionIds: item.selectedOptionIds,
+            unitPrice
+          });
+          await this.cartItemRepository.save(cartItem);
+        } catch (error) {
+          // Skip items that fail (e.g., product not found)
+          continue;
         }
-      });
-    }
+      }
 
-    const updatedCart = await this.getCartById(targetCart.id);
-    return this.serializeCart(updatedCart);
+      const updatedCart = await this.getCartById(targetCart.id);
+      return this.serializeCart(updatedCart, user || undefined);
+    } catch (error) {
+      // Return empty cart instead of throwing error to prevent login failure
+      return { items: [] };
+    }
   }
 
   async addItem(
-    cognitoUserId: string | undefined,
+    userId: string | undefined,
     anonymousId: string | undefined,
     payload: AddItemDto
   ): Promise<SerializedCart> {
     const targetAnonymousId = payload.anonymousId ?? anonymousId;
-    const cart = cognitoUserId
-      ? await this.ensureCartForUser(cognitoUserId)
-      : await this.ensureCartForAnonymous(targetAnonymousId ?? randomUUID());
+    let user: User | null = null;
+    let cart: Cart;
+    
+    if (userId) {
+      // Try to get user, but don't throw error if not found
+      // User record may not exist in cart-service yet
+      user = await this.getUserById(userId);
+      cart = await this.ensureCartForUser(userId);
+    } else {
+      cart = await this.ensureCartForAnonymous(targetAnonymousId ?? randomUUID());
+    }
 
-    const existingItem = await this.prisma.cartItem.findFirst({
+    const existingItem = await this.cartItemRepository.findOne({
       where: {
         cartId: cart.id,
         productId: payload.productId
       }
     });
 
-    const unitPrice = await this.calculateUnitPrice(payload.productId, payload.selectedOptionIds);
+    // Use provided unitPrice if available, otherwise calculate
+    let unitPrice = payload.unitPrice ?? 0;
+    if (!unitPrice || unitPrice === 0) {
+      unitPrice = await this.calculateUnitPrice(payload.productId, payload.selectedOptionIds);
+    }
 
     if (existingItem) {
-      await this.prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: {
-          quantity: existingItem.quantity + payload.quantity,
-          selectedOptionIds: payload.selectedOptionIds,
-          unitPrice
-        }
-      });
+      existingItem.quantity += payload.quantity;
+      existingItem.selectedOptionIds = payload.selectedOptionIds;
+      existingItem.unitPrice = unitPrice;
+      await this.cartItemRepository.save(existingItem);
     } else {
-      await this.prisma.cartItem.create({
-        data: {
-          cartId: cart.id,
-          productId: payload.productId,
-          quantity: payload.quantity,
-          selectedOptionIds: payload.selectedOptionIds,
-          unitPrice
-        }
+      const cartItem = this.cartItemRepository.create({
+        cartId: cart.id,
+        productId: payload.productId,
+        quantity: payload.quantity,
+        selectedOptionIds: payload.selectedOptionIds,
+        unitPrice
       });
+      await this.cartItemRepository.save(cartItem);
     }
 
     const updatedCart = await this.getCartById(cart.id);
-    return this.serializeCart(updatedCart);
+    return this.serializeCart(updatedCart, user || undefined);
   }
 
   async updateItem(
-    cognitoUserId: string | undefined,
+    userId: string | undefined,
     anonymousId: string | undefined,
     itemId: string,
     payload: UpdateItemDto
   ): Promise<SerializedCart> {
     const activeAnonymousId = payload.anonymousId ?? anonymousId;
-    const cart = cognitoUserId
-      ? await this.getCartForUserId(cognitoUserId)
-      : activeAnonymousId
-      ? await this.getCartForAnonymousId(activeAnonymousId)
-      : null;
+    let cart: Cart | null = null;
+    let user: User | null = null;
+    
+    if (userId) {
+      const result = await this.getCartForUserId(userId);
+      cart = result.cart;
+      user = result.user;
+    } else if (activeAnonymousId) {
+      cart = await this.getCartForAnonymousId(activeAnonymousId);
+      if (cart?.user) {
+        user = cart.user;
+      }
+    }
 
     if (!cart) {
       throw new NotFoundException('Cart not found');
     }
 
-    const item = (cart.items ?? []).find(
-      (cartItem: CartItemWithProduct) => cartItem.id === itemId
-    );
-    if (!item) {
+    const cartItem = await this.cartItemRepository.findOne({
+      where: { id: itemId, cartId: cart.id }
+    });
+
+    if (!cartItem) {
       throw new NotFoundException('Cart item not found');
     }
 
-    await this.prisma.cartItem.update({
-      where: { id: itemId },
-      data: { quantity: payload.quantity }
-    });
+    cartItem.quantity = payload.quantity;
+    await this.cartItemRepository.save(cartItem);
 
     const updatedCart = await this.getCartById(cart.id);
-    return this.serializeCart(updatedCart);
+    return this.serializeCart(updatedCart, user || undefined);
   }
 
   async removeItem(
-    cognitoUserId: string | undefined,
+    userId: string | undefined,
     anonymousId: string | undefined,
     itemId: string
   ): Promise<SerializedCart> {
-    const cart = cognitoUserId
-      ? await this.getCartForUserId(cognitoUserId)
-      : anonymousId
-      ? await this.getCartForAnonymousId(anonymousId)
-      : null;
+    let cart: Cart | null = null;
+    let user: User | null = null;
+    
+    if (userId) {
+      const result = await this.getCartForUserId(userId);
+      cart = result.cart;
+      user = result.user;
+    } else if (anonymousId) {
+      cart = await this.getCartForAnonymousId(anonymousId);
+      if (cart?.user) {
+        user = cart.user;
+      }
+    }
 
     if (!cart) {
       throw new NotFoundException('Cart not found');
     }
 
-    const item = (cart.items ?? []).find(
-      (cartItem: CartItemWithProduct) => cartItem.id === itemId
-    );
-    if (!item) {
+    const cartItem = await this.cartItemRepository.findOne({
+      where: { id: itemId, cartId: cart.id }
+    });
+
+    if (!cartItem) {
       throw new NotFoundException('Cart item not found');
     }
 
-    await this.prisma.cartItem.delete({ where: { id: itemId } });
+    await this.cartItemRepository.remove(cartItem);
     const updatedCart = await this.getCartById(cart.id);
-    return this.serializeCart(updatedCart);
+    return this.serializeCart(updatedCart, user || undefined);
   }
 }

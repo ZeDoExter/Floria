@@ -1,17 +1,19 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { Credentials, loginRequest } from '../api/client';
-import { getUserRole, UserRole } from '../utils/auth';
+import { Credentials, loginRequest, registerRequest } from '../api/client';
+import { UserRole } from '../utils/auth';
 
 type AuthUser = {
   token: string;
   displayName: string;
   email: string;
   role: UserRole;
+  userId?: string;
 };
 
 type AuthContextValue = {
   user: AuthUser | null;
   login: (credentials: Credentials) => Promise<void>;
+  register: (data: { email: string; password: string; firstName?: string; lastName?: string }) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 };
@@ -31,16 +33,16 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     try {
       const parsed = JSON.parse(stored) as Partial<AuthUser> & { email?: string | null };
-      if (!parsed || !parsed.email || !parsed.token || !parsed.displayName) {
+      if (!parsed || !parsed.email || !parsed.token || !parsed.displayName || !parsed.role) {
         throw new Error('Stored auth state is missing required fields');
       }
 
-      const role = parsed.role ?? getUserRole(parsed.email);
       setUser({
         token: parsed.token,
         displayName: parsed.displayName,
         email: parsed.email,
-        role
+        role: parsed.role as UserRole,
+        userId: parsed.userId
       });
     } catch (error) {
       console.warn('Failed to parse stored auth state', error);
@@ -60,12 +62,30 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     setIsLoading(true);
     try {
       const response = await loginRequest(credentials);
-      const role = getUserRole(credentials.email);
+      const role = (response.user?.role as UserRole) || 'customer';
       setUser({
         token: response.token,
         displayName: response.displayName,
         email: credentials.email,
-        role
+        role,
+        userId: response.user?.id
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (data: { email: string; password: string; firstName?: string; lastName?: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await registerRequest(data);
+      const role = (response.user?.role as UserRole) || 'customer';
+      setUser({
+        token: response.token,
+        displayName: response.displayName,
+        email: data.email,
+        role,
+        userId: response.user?.id
       });
     } finally {
       setIsLoading(false);
@@ -78,6 +98,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     () => ({
       user,
       login,
+      register,
       logout,
       isLoading
     }),

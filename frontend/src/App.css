@@ -1,1 +1,56 @@
 @import "tailwindcss";
+
+/* Tailwind Theme Configuration */
+@theme {
+  /* Light mode colors */
+  --color-background: #F5D7DB;
+  --color-foreground: #2D2D2D;
+  --color-card: #FFF9F0;
+  --color-card-foreground: #2D2D2D;
+  --color-primary: #B5D99C;
+  --color-primary-foreground: #2D4A1F;
+  --color-secondary: #8FB578;
+  --color-secondary-foreground: #FFF9F0;
+  --color-muted: #F5E8D8;
+  --color-muted-foreground: #6B6B6B;
+  --color-border: #E8E8E8;
+  --color-success: #7BC96F;
+  --color-error: #E78B8B;
+  --color-surface: #FFF9F0;
+}
+
+/* Base theming */
+html, body {
+    height: 100%;
+    overflow: auto;
+}
+
+#root {
+    min-height: 100%;
+}
+
+body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Dark mode */
+.dark {
+    --color-background: #2D2D2D;
+    --color-foreground: #F5F5F5;
+    --color-card: #3D3D3D;
+    --color-card-foreground: #F5F5F5;
+    --color-primary: #8FB578;
+    --color-primary-foreground: #F5F5F5;
+    --color-secondary: #6B9558;
+    --color-secondary-foreground: #F5F5F5;
+    --color-muted: #4D4D4D;
+    --color-muted-foreground: #B5B5B5;
+    --color-border: #4D4D4D;
+    --color-success: #5a9e50;
+    --color-error: #c76565;
+    --color-surface: #3D3D3D;
+}

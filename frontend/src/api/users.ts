@@ -12,6 +12,15 @@ export type DirectoryResponse = {
   users: DirectoryUser[];
 };
 
+export type UserProfile = {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  description?: string;
+};
+
 export const fetchDirectory = async (token: string) => {
   const response = await apiClient.get<DirectoryResponse>('/admin/users', {
     headers: { Authorization: `Bearer ${token}` }
@@ -26,4 +35,9 @@ export const fetchDirectory = async (token: string) => {
     ...user,
     capabilities: Array.isArray(user.capabilities) ? user.capabilities : []
   }));
+};
+
+export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
+  const response = await apiClient.get(`/users/${userId}`);
+  return response.data;
 };

@@ -12,6 +12,11 @@ export class CartItemDto {
   @IsArray()
   @IsString({ each: true })
   selectedOptionIds!: string[];
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  unitPrice?: number;
 }
 
 export class AddItemDto extends CartItemDto {

@@ -4,6 +4,7 @@ import { fetchProductDetail, ProductDetail } from '../api/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { canPlaceOrders } from '../utils/auth';
+import { PackageIcon } from '../components/icons/PackageIcon';
 
 export const ProductDetailPage = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -16,7 +17,9 @@ export const ProductDetailPage = () => {
   const [groupErrors, setGroupErrors] = useState<Record<string, string | null>>({});
   const { addItem } = useCart();
   const { user } = useAuth();
-  const canOrder = user ? canPlaceOrders(user.role) : true;
+  
+  const isOwnProduct = user && product && user.userId === product.ownerId;
+  const canOrder = user ? (canPlaceOrders(user.role) && !isOwnProduct) : true;
 
   useEffect(() => {
     if (!productId) {
@@ -95,14 +98,24 @@ export const ProductDetailPage = () => {
     });
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) {
       return;
     }
     setFormError(null);
 
+    if (!user) {
+      setFormError('Please sign in to add items to cart');
+      return;
+    }
+
+    if (isOwnProduct) {
+      setFormError('You cannot order from your own shop');
+      return;
+    }
+    
     if (!canOrder) {
-      setFormError('Store owners cannot place orders from their own catalog.');
+      setFormError('Please sign in to place orders');
       return;
     }
 
@@ -130,93 +143,174 @@ export const ProductDetailPage = () => {
 
     if (hasError) {
       setGroupErrors(nextGroupErrors);
-      setFormError('Please fix the highlighted option groups before adding this arrangement to your cart.');
+      setFormError('Please fix the highlighted option groups before adding to cart.');
       return;
     }
 
     setGroupErrors(nextGroupErrors);
     const optionIds = Object.values(selectedOptions).flat();
-    addItem({ productId: product.id, quantity: 1, selectedOptionIds: optionIds, unitPrice: price, productName: product?.name ?? "" } as any);
-    navigate('/cart');
+    
+    try {
+      await addItem({ 
+        productId: product.id, 
+        quantity: 1, 
+        selectedOptionIds: optionIds, 
+        unitPrice: price, 
+        productName: product?.name ?? "" 
+      } as any);
+      navigate('/cart');
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Unable to add item to cart');
+    }
   };
 
   if (isLoading) {
-    return <p>Loading arrangement...</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading arrangement...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <p style={{ color: '#c2415c' }}>{error}</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="bg-error/10 border border-error rounded-lg p-4">
+          <p className="text-error text-center">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!product) {
-    return <p>Product not found.</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Product not found.</p>
+      </div>
+    );
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <h1 style={{ fontSize: 28, marginBottom: 6, color: '#c2415c' }}>{product.name}</h1>
-        {product.description && <p style={{ marginBottom: 6 }}>{product.description}</p>}
-        <p style={{ fontSize: 20, fontWeight: 600 }}>${price.toFixed(2)}</p>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {product.optionGroups.map((group) => (
-          <div key={group.id} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 4, color: '#c2415c' }}>{group.name}</h2>
-            {group.description && <p style={{ fontSize: 14, marginBottom: 4 }}>{group.description}</p>}
-            <p style={{ fontSize: 12, color: '#555' }}>
-              {group.isRequired ? 'Required' : 'Optional'} – select between {group.minSelect} and{' '}
-              {group.maxSelect || group.options.length}
-            </p>
-            <ul style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, padding: 0 }}>
-              {group.options.map((option) => {
-                const isSelected = selectedOptions[group.id]?.includes(option.id);
-                return (
-                  <li key={option.id} style={{ listStyle: 'none' }}>
-                    <label
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        border: '1px solid #eee',
-                        padding: '8px 12px',
-                        background: isSelected ? '#fde4ec' : '#fafafa',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <span>
-                        <span style={{ fontWeight: 600 }}>{option.name}</span>
-                        {option.description && <p style={{ fontSize: 12 }}>{option.description}</p>}
-                      </span>
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleOption(group, option.id)} />
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-            {groupErrors[group.id] && <p style={{ marginTop: 8, fontSize: 12, color: '#c2415c' }}>{groupErrors[group.id]}</p>}
+    <main className="min-h-screen bg-background px-4 py-4">
+      <div className="mx-auto max-w-lg">
+        {/* Main Card Container - includes everything */}
+        <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+          {/* Back Button inside card */}
+          <div className="p-4 pb-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+            >
+              <span className="text-xl">←</span>
+              <span className="text-sm font-medium">Back</span>
+            </button>
           </div>
-        ))}
+
+          {/* Product Image */}
+          <div className="bg-muted mt-4">
+            {product.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                className="w-full h-72 object-cover"
+              />
+            ) : (
+              <div className="w-full h-72 bg-muted flex items-center justify-center">
+                <PackageIcon className="h-20 w-20 text-muted-foreground opacity-30" />
+              </div>
+            )}
+          </div>
+
+          {/* Product Info */}
+          <div className="p-5 space-y-4">
+            {/* Header */}
+            <div className="pb-4 border-b border-border">
+              <h1 className="text-xl font-bold text-foreground mb-2">{product.name}</h1>
+              {product.description && (
+                <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
+              )}
+            </div>
+
+            {/* Option Groups */}
+            {product.optionGroups.length > 0 && (
+              <div className="space-y-4">
+                {product.optionGroups.map((group) => (
+                  <div key={group.id} className="space-y-2.5">
+                    {/* Group Header */}
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">
+                        {group.name}
+                        {group.isRequired && <span className="text-error ml-1">*</span>}
+                      </h3>
+                      {group.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{group.description}</p>
+                      )}
+                    </div>
+
+                    {/* Options */}
+                    <div className="flex flex-wrap gap-2">
+                      {group.options.map((option) => {
+                        const isSelected = selectedOptions[group.id]?.includes(option.id);
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => toggleOption(group, option.id)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                              isSelected
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-foreground border border-border hover:border-primary'
+                            }`}
+                          >
+                            {option.name}
+                            {option.priceModifier !== 0 && (
+                              <span className="ml-1 text-xs">
+                                ({option.priceModifier > 0 ? '+' : ''}${option.priceModifier.toFixed(2)})
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Group Error */}
+                    {groupErrors[group.id] && (
+                      <p className="text-xs text-error">
+                        {groupErrors[group.id]}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Form Error */}
+            {formError && (
+              <div className="bg-error/10 border border-error rounded-lg p-3">
+                <p className="text-xs text-error">{formError}</p>
+              </div>
+            )}
+
+            {/* Add to Cart Button */}
+            <div className="pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={!canOrder}
+                className="w-full bg-success text-white py-3 px-5 rounded-lg font-bold text-base hover:bg-success/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Purchase - ${price.toFixed(2)}
+              </button>
+
+              {!canOrder && isOwnProduct && (
+                <p className="text-xs text-error text-center mt-2">
+                  You cannot order from your own shop
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-      {formError && <p style={{ color: '#c2415c' }}>{formError}</p>}
-      {!canOrder && <p style={{ color: '#c2415c' }}>Store owners can manage products but cannot purchase from their own shop.</p>}
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={!canOrder}
-        style={{
-          background: '#c2415c',
-          color: '#fff',
-          padding: '8px 16px',
-          border: 'none',
-          cursor: !canOrder ? 'not-allowed' : 'pointer',
-          opacity: !canOrder ? 0.6 : 1
-        }}
-      >
-        Add to cart
-      </button>
-    </section>
+    </main>
   );
 };
-
-

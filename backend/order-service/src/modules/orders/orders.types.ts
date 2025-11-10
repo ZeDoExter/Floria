@@ -1,6 +1,3 @@
-import type { Decimal } from '@prisma/client/runtime/library';
-import type { StoreKey } from './roles.js';
-
 export const ORDER_STATUS_VALUES = [
   'PENDING',
   'PLACED',
@@ -16,7 +13,7 @@ export type OrderStatus = (typeof ORDER_STATUS_VALUES)[number];
 export interface ProductOption {
   id: string;
   name: string;
-  priceModifier: Decimal;
+  priceModifier: number;
 }
 
 export interface ProductOptionGroup {
@@ -28,8 +25,7 @@ export interface ProductOptionGroup {
 export interface ProductWithOptionGroups {
   id: string;
   name: string;
-  basePrice: Decimal;
-  storeKey: StoreKey;
+  basePrice: number;
   optionGroups: ProductOptionGroup[];
 }
 
@@ -39,16 +35,15 @@ export interface OrderItemWithSnapshot {
   productId: string;
   productName: string;
   quantity: number;
-  unitPrice: Decimal;
+  unitPrice: number;
   optionSnapshot: unknown;
 }
 
 export interface OrderWithItems {
   id: string;
-  cognito_user_id: string;
-  totalAmount: Decimal;
+  userId: string;
+  totalAmount: number;
   status: string;
-  storeKey: StoreKey;
   createdAt: Date;
   notes: string | null;
   deliveryDate: Date | null;
@@ -58,14 +53,14 @@ export interface OrderWithItems {
 export interface CalculatedProductPricing {
   product: ProductWithOptionGroups;
   selectedOptions: ProductOption[];
-  unitPrice: Decimal;
+  unitPrice: number;
 }
 
 export interface PreparedOrderItem {
   productId: string;
   productName: string;
   quantity: number;
-  unitPrice: Decimal;
+  unitPrice: number;
   optionSnapshot: {
     selectedOptionIds: string[];
     selectedOptions: Array<{
@@ -84,9 +79,6 @@ export interface SerializedOrderList {
     createdAt: Date;
     notes: string | null;
     deliveryDate: Date | null;
-    storeKey: StoreKey;
-    customerId?: string;
-    customerEmail?: string | null;
   }>;
 }
 
@@ -98,6 +90,5 @@ export interface SerializedOrderDetail {
     createdAt: Date;
     notes: string | null;
     deliveryDate: Date | null;
-    storeKey: StoreKey;
   };
 }

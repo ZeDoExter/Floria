@@ -8,8 +8,21 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  list(@Headers('x-user-id') userId?: string, @Headers('x-user-email') userEmail?: string) {
-    return this.ordersService.listOrders(userId, userEmail);
+  list(
+    @Headers('x-user-id') userId?: string,
+    @Headers('x-user-email') userEmail?: string,
+    @Headers('x-user-role') userRole?: string
+  ) {
+    // Always return user's own orders (orders they placed)
+    return this.ordersService.listMyOrders(userId);
+  }
+
+  @Get('customer-orders')
+  listCustomerOrders(
+    @Headers('x-user-id') userId?: string,
+    @Headers('x-user-email') userEmail?: string
+  ) {
+    return this.ordersService.listCustomerOrders(userId, userEmail);
   }
 
   @Post()

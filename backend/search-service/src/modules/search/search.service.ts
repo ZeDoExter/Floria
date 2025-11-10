@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-
-type DecimalLike = number | string | bigint | { toString(): string };
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, ILike } from 'typeorm';
+import { Product } from '../../entities/product.entity.js';
+import { Category } from '../../entities/category.entity.js';
 
 type ProductWithCategory = {
   id: string;
   name: string;
   description: string | null;
-  basePrice: DecimalLike;
+  basePrice: number;
   category: { name: string | null } | null;
 };
-
-const decimalToNumber = (value: DecimalLike): number => Number.parseFloat(value.toString());
 
 type SearchProductResult = {
   id: string;
@@ -27,21 +26,22 @@ type SearchResponse = {
 
 @Injectable()
 export class SearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>
+  ) {}
 
   async searchProducts(query: string): Promise<SearchResponse> {
     if (!query) {
       return { results: [] };
     }
 
-    const products: ProductWithCategory[] = await this.prisma.product.findMany({
-      where: {
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { description: { contains: query, mode: 'insensitive' } }
-        ]
-      },
-      include: { category: true },
+    const products = await this.productRepository.find({
+      where: [
+        { name: ILike(`%${query}%`) },
+        { description: ILike(`%${query}%`) }
+      ],
+      relations: ['category'],
       take: 20
     });
 
@@ -50,8 +50,8 @@ export class SearchService {
         id: product.id,
         name: product.name,
         description: product.description,
-        basePrice: decimalToNumber(product.basePrice),
-        category: product.category?.name ?? null
+        basePrice: Number(product.basePrice),
+        category: product.categoryId ?? null
       }))
     };
   }

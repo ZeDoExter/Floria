@@ -14,32 +14,18 @@ services:
     networks:
       - floratailor-network
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: flora.admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: flora
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-    ports:
-      - '5050:80'
-    volumes:
-      - ./pgadmin/servers.json:/pgadmin4/servers.json
-      - pgadmin-data:/var/lib/pgadmin
-    networks:
-      - floratailor-network
-    depends_on:
-      postgres:
-        condition: service_started
-
   product-service:
     build:
       context: ./backend/product-service
     environment:
       PORT: 3001
-      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+      NODE_ENV: development
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: flora
+      POSTGRES_PASSWORD: flora
+      POSTGRES_DB: floratailor
+      GATEWAY_URL: http://gateway:3000
     depends_on:
       - postgres
     networks:
@@ -49,8 +35,15 @@ services:
     build:
       context: ./backend/cart-service
     environment:
+      NODE_ENV: development
       PORT: 3002
-      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: flora
+      POSTGRES_PASSWORD: flora
+      POSTGRES_DB: floratailor
+      GATEWAY_URL: http://gateway:3000
+      CORS_ORIGIN: http://localhost:4173
     depends_on:
       - postgres
     networks:
@@ -61,7 +54,12 @@ services:
       context: ./backend/order-service
     environment:
       PORT: 3003
-      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: flora
+      POSTGRES_PASSWORD: flora
+      POSTGRES_DB: floratailor
+      NODE_ENV: development
     depends_on:
       - postgres
     networks:
@@ -72,7 +70,13 @@ services:
       context: ./backend/search-service
     environment:
       PORT: 3004
-      DATABASE_URL: postgresql://flora:flora@postgres:5432/floratailor?schema=public
+      NODE_ENV: development
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: flora
+      POSTGRES_PASSWORD: flora
+      POSTGRES_DB: floratailor
+      GATEWAY_URL: http://gateway:3000
     depends_on:
       - postgres
     networks:
@@ -83,7 +87,14 @@ services:
       context: ./backend/gateway
     environment:
       PORT: 3000
+      NODE_ENV: development
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: flora
+      POSTGRES_PASSWORD: flora
+      POSTGRES_DB: floratailor
       JWT_SECRET: super-secret-local-key
+      CORS_ORIGIN: http://localhost:4173
       PRODUCT_SERVICE_URL: http://product-service:3001
       CART_SERVICE_URL: http://cart-service:3002
       ORDER_SERVICE_URL: http://order-service:3003

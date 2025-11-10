@@ -1,15 +1,14 @@
 import { apiClient } from './client';
 
-export type StoreKey = 'flagship' | 'weekend-market';
-
 export interface Category {
   id: string;
   name: string;
   description?: string;
 }
 
-export const fetchCategories = async (): Promise<Category[]> => {
-  const response = await apiClient.get('/categories');
+export const fetchCategories = async (filterByOwner = false): Promise<Category[]> => {
+  const params = filterByOwner ? { filterByOwner: 'true' } : {};
+  const response = await apiClient.get('/categories', { params });
   return (response.data as any[]).map((category) => ({
     ...category,
     description: category.description ?? undefined
@@ -39,7 +38,6 @@ export interface CreateProductInput {
   basePrice: number;
   imageUrl?: string;
   categoryId: string;
-  storeKey?: StoreKey;
 }
 
 export const createProduct = async (input: CreateProductInput, token?: string) => {
@@ -70,5 +68,25 @@ export interface CreateOptionInput {
 
 export const createOption = async (input: CreateOptionInput, token?: string) => {
   const response = await apiClient.post('/options', input, withAuth(token));
+  return response.data;
+};
+
+export const deleteCategory = async (id: string, token?: string) => {
+  const response = await apiClient.delete(`/categories/${id}`, withAuth(token));
+  return response.data;
+};
+
+export const deleteProduct = async (id: string, token?: string) => {
+  const response = await apiClient.delete(`/products/${id}`, withAuth(token));
+  return response.data;
+};
+
+export const deleteOptionGroup = async (id: string, token?: string) => {
+  const response = await apiClient.delete(`/option-groups/${id}`, withAuth(token));
+  return response.data;
+};
+
+export const deleteOption = async (id: string, token?: string) => {
+  const response = await apiClient.delete(`/options/${id}`, withAuth(token));
   return response.data;
 };

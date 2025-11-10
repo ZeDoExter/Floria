@@ -1,18 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ConfigService } from '@nestjs/config';
-import { AuthMiddleware } from './common/auth.middleware.js';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: false });
   const configService = app.get(ConfigService);
-  const authMiddleware = app.get(AuthMiddleware);
 
+  const corsOrigin = configService.get('CORS_ORIGIN') || 'http://localhost:4173';
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN') || '*',
+    origin: corsOrigin,
     credentials: true,
-    exposedHeaders: ['x-total-count']
+    exposedHeaders: ['x-total-count'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   });
 
   app.useGlobalPipes(
@@ -21,8 +22,6 @@ async function bootstrap() {
       transform: true
     })
   );
-
-  app.use(authMiddleware.use.bind(authMiddleware));
 
   const port = configService.get('PORT') || 3000;
   await app.listen(port);
