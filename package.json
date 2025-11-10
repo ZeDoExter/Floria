@@ -17,6 +17,7 @@
     "prisma:generate": "prisma generate --schema prisma/schema.prisma"
   },
   "dependencies": {
+    "@nestjs/common": "^11.1.8",
     "@prisma/client": "5.16.1"
   },
   "devDependencies": {

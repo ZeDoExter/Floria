@@ -5,10 +5,15 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { canPlaceOrders } from '../utils/auth';
 
-export const CartPage = () => {
+export const CartPage: React.FC = () => {
   const { cartItems, updateQuantity, removeItem } = useCart();
-  const subtotal = cartItems.reduce((total, item) => total + (item.unitPrice ?? 0) * item.quantity, 0);
-  const [productDetails, setProductDetails] = useState<Record<string, ProductDetail>>({});
+  const subtotal = cartItems.reduce(
+    (total, item) => total + (item.unitPrice ?? 0) * item.quantity,
+    0
+  );
+  const [productDetails, setProductDetails] = useState<
+    Record<string, ProductDetail>
+  >({});
   const { user } = useAuth();
   const canOrder = user ? canPlaceOrders(user.role) : true;
 
@@ -16,11 +21,12 @@ export const CartPage = () => {
     let isMounted = true;
 
     const loadDetails = async () => {
-      const uniqueProductIds = Array.from(new Set(cartItems.map((item) => item.productId))).filter(Boolean);
+      const uniqueProductIds = Array.from(
+        new Set(cartItems.map((item) => item.productId))
+      ).filter(Boolean) as string[];
+
       if (uniqueProductIds.length === 0) {
-        if (isMounted) {
-          setProductDetails({});
-        }
+        if (isMounted) setProductDetails({});
         return;
       }
 
@@ -31,27 +37,19 @@ export const CartPage = () => {
             return [id, detail] as const;
           })
         );
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
+
         setProductDetails((current) => {
           const next = { ...current };
-          for (const [id, detail] of entries) {
-            next[id] = detail;
-          }
+          for (const [id, detail] of entries) next[id] = detail;
           return next;
         });
       } catch (error) {
-        console.error('Failed to load product details for cart items', error);
+        console.error("Failed to load product details for cart items", error);
       }
     };
 
-    const guardedLoad = async () => {
-      await loadDetails();
-    };
-
-    void guardedLoad();
-
+    void loadDetails();
     return () => {
       isMounted = false;
     };
@@ -59,96 +57,114 @@ export const CartPage = () => {
 
   const describeSelectedOptions = useMemo(() => {
     return (productId: string, selectedOptionIds: string[]) => {
-      if (!selectedOptionIds.length) {
-        return 'None selected';
-      }
+      if (!selectedOptionIds.length) return "None selected";
 
       const detail = productDetails[productId];
-      if (!detail) {
-        return 'Loading details...';
-      }
+      if (!detail) return "Loading details...";
 
       const groupsWithSelections = detail.optionGroups
         .map((group) => {
-          const options = group.options.filter((option) => selectedOptionIds.includes(option.id));
-          if (options.length === 0) {
-            return null;
-          }
-          const optionNames = options.map((option) => option.name).join(', ');
+          const options = group.options.filter((o) =>
+            selectedOptionIds.includes(o.id)
+          );
+          if (options.length === 0) return null;
+          const optionNames = options.map((o) => o.name).join(", ");
           return `${group.name}: ${optionNames}`;
         })
-        .filter((value): value is string => Boolean(value));
+        .filter((v): v is string => Boolean(v));
 
-      if (groupsWithSelections.length === 0) {
-        return 'None selected';
-      }
-
-      return groupsWithSelections.join(' | ');
+      if (groupsWithSelections.length === 0) return "None selected";
+      return groupsWithSelections.join(" | ");
     };
   }, [productDetails]);
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <section className="flex flex-col gap-4">
+      {/* Header */}
       <header>
-        <h1 style={{ fontSize: 28, marginBottom: 4, color: '#c2415c' }}>Your cart</h1>
-        <p>Review your arrangement before checking out.</p>
+        <h1 className="text-[28px] mb-1 text-rose-600 font-semibold">Your cart</h1>
+        <p className="text-slate-600">Review your arrangement before checking out.</p>
       </header>
+
+      {/* Empty cart */}
       {cartItems.length === 0 ? (
-        <p>
-          Your cart is empty.{' '}
-          <Link to="/" style={{ color: '#c2415c' }}>
+        <p className="text-slate-700">
+          Your cart is empty.{" "}
+          <Link to="/" className="text-rose-600 hover:text-rose-700 underline underline-offset-2">
             Explore bouquets
           </Link>
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
+          {/* Items */}
           {cartItems.map((item) => (
-            <div key={item.productId} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+            <div
+              key={item.productId + (item.selectedOptionIds?.join("|") ?? "")}
+              className="border border-slate-200 bg-white rounded-xl p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p style={{ fontWeight: 600 }}>{item.productName ?? 'Custom Bouquet'}</p>
-                  <p style={{ fontSize: 14, color: '#555' }}>Selected options: {describeSelectedOptions(item.productId, item.selectedOptionIds)}</p>
+                  <p className="font-semibold text-slate-900">
+                    {item.productName ?? "Custom Bouquet"}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    Selected options:{" "}
+                    {describeSelectedOptions(item.productId, item.selectedOptionIds)}
+                  </p>
                 </div>
-                <button type="button" style={{ color: '#c2415c', cursor: 'pointer' }} onClick={() => removeItem(item.productId, item.selectedOptionIds)}>
+                <button
+                  type="button"
+                  className="text-rose-600 hover:text-rose-700 text-sm font-medium"
+                  onClick={() => removeItem(item.productId, item.selectedOptionIds)}
+                >
                   Remove
                 </button>
               </div>
-              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: 14 }}>
+
+              <div className="mt-3 flex items-center justify-between">
+                <label className="text-sm text-slate-800 flex items-center">
                   Quantity
                   <input
                     type="number"
                     min={1}
                     value={item.quantity}
-                    onChange={(event) => updateQuantity(item.productId, Number(event.target.value), item.selectedOptionIds)}
-                    style={{ marginLeft: 8, width: 80, padding: '4px 8px' }}
+                    onChange={(e) =>
+                      updateQuantity(
+                        item.productId,
+                        Number(e.target.value),
+                        item.selectedOptionIds
+                      )
+                    }
+                    className="ml-2 w-20 rounded-md border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
                   />
                 </label>
-                <p style={{ fontWeight: 600 }}>${((item.unitPrice ?? 0) * item.quantity).toFixed(2)}</p>
+                <p className="font-semibold text-slate-900">
+                  ${((item.unitPrice ?? 0) * item.quantity).toFixed(2)}
+                </p>
               </div>
             </div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: 12 }}>
-            <p style={{ fontSize: 18, fontWeight: 600 }}>Subtotal</p>
-            <p style={{ fontSize: 18, fontWeight: 600, color: '#c2415c' }}>${subtotal.toFixed(2)}</p>
+
+          {/* Subtotal */}
+          <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+            <p className="text-lg font-semibold text-slate-900">Subtotal</p>
+            <p className="text-lg font-semibold text-rose-600">
+              ${subtotal.toFixed(2)}
+            </p>
           </div>
+
+          {/* CTA */}
           {canOrder ? (
             <Link
               to="/checkout"
-              style={{
-                display: 'inline-block',
-                textAlign: 'center',
-                background: '#c2415c',
-                color: '#fff',
-                padding: '8px 16px',
-                textDecoration: 'none'
-              }}
+              className="inline-block text-center bg-rose-600 text-white px-4 py-2 rounded-md font-medium hover:bg-rose-700 transition"
             >
               Proceed to checkout
             </Link>
           ) : (
-            <p style={{ color: '#c2415c', fontSize: 14 }}>
-              Store owners cannot proceed to checkout. Switch to a customer account to place an order.
+            <p className="text-rose-600 text-sm">
+              Store owners cannot proceed to checkout. Switch to a customer account to
+              place an order.
             </p>
           )}
         </div>
@@ -156,4 +172,3 @@ export const CartPage = () => {
     </section>
   );
 };
-
