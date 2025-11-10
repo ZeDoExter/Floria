@@ -8,6 +8,7 @@ export interface ProductSummary {
   imageUrl?: string;
   categoryId?: string;
   categoryName?: string;
+  ownerId?: string;
 }
 
 export interface ProductDetail extends ProductSummary {
@@ -37,6 +38,7 @@ const normalizeProductSummary = (product: any): ProductSummary => ({
   basePrice: Number(product.basePrice ?? 0),
   categoryId: product.categoryId ?? product.category?.id,
   categoryName: product.category?.name ?? product.categoryName,
+  ownerId: product.ownerId,
 });
 
 const normalizeProductDetail = (product: any): ProductDetail => ({

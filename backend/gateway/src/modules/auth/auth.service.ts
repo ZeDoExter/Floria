@@ -32,9 +32,12 @@ export class AuthService {
       // For development: create account with any password
       // In production, this should require registration first
       const hashedPassword = await bcrypt.hash(dto.password, 10);
+      // Determine role based on email pattern
+      const role = dto.email.includes('owner') ? 'owner' : 'customer';
       account = this.accountRepository.create({
         email: dto.email,
         password: hashedPassword,
+        role: role,
         isVerified: true
       });
       account = await this.accountRepository.save(account);
@@ -90,11 +93,18 @@ export class AuthService {
     // Use non-null assertion since we've verified it exists
     const user = account.user!;
 
+    // Update role if missing
+    if (!account.role) {
+      account.role = 'customer';
+      await this.accountRepository.save(account);
+    }
+
     // Generate JWT token
     const payload = {
       sub: account.email,
       userId: user.id,
       email: account.email,
+      role: account.role || 'customer',
       displayName: user.firstName || account.email.split('@')[0] || account.email
     };
 
@@ -102,10 +112,11 @@ export class AuthService {
 
     return {
       token,
+      displayName: payload.displayName,
       user: {
         id: user.id,
         email: account.email,
-        displayName: payload.displayName
+        role: account.role || 'customer'
       }
     };
   }
@@ -120,10 +131,13 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    // Determine role based on email pattern
+    const role = email.includes('owner') ? 'owner' : 'customer';
     const account = this.accountRepository.create({
       email,
       password: hashedPassword,
-      isVerified: false
+      role: role,
+      isVerified: true
     });
     const savedAccount = await this.accountRepository.save(account);
 
@@ -139,6 +153,7 @@ export class AuthService {
       account: {
         id: savedAccount.id,
         email: savedAccount.email,
+        role: savedAccount.role,
         isVerified: savedAccount.isVerified
       },
       user: {

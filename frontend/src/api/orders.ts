@@ -57,6 +57,19 @@ export const fetchOrders = async (token: string) => {
   return orders.map(normalizeOrder);
 };
 
+export const fetchCustomerOrders = async (token: string) => {
+  const response = await apiClient.get('/orders/customer-orders', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const orders = (response.data as { orders?: unknown })?.orders;
+  if (!Array.isArray(orders)) {
+    return [];
+  }
+
+  return orders.map(normalizeOrder);
+};
+
 export const updateOrderStatus = async (orderId: string, status: OrderStatus, token: string) => {
   const response = await apiClient.patch(
     `/orders/${orderId}/status`,

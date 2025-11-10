@@ -1,0 +1,375 @@
+{
+  "categories": [
+    {
+      "id": "cat-001",
+      "name": "ช่อดอกไม้งานแต่ง",
+      "description": "ช่อดอกไม้พรีเมียมสำหรับงานพิธีและงานแต่งงาน",
+      "imageUrl": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800"
+    },
+    {
+      "id": "cat-002",
+      "name": "ช่อดอกไม้ประจำวัน",
+      "description": "ช่อดอกไม้สดสวยสำหรับทุกโอกาส",
+      "imageUrl": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800"
+    },
+    {
+      "id": "cat-003",
+      "name": "ช่อดอกไม้พรีเมียม",
+      "description": "ช่อดอกไม้หรูหราสำหรับโอกาสพิเศษ",
+      "imageUrl": "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=800"
+    },
+    {
+      "id": "cat-004",
+      "name": "ช่อดอกไม้สไตล์มินิมอล",
+      "description": "ช่อดอกไม้เรียบง่ายแต่สวยงาม",
+      "imageUrl": "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-001",
+      "categoryId": "cat-001",
+      "name": "ช่อกุหลาบออโรร่า",
+      "description": "ช่อกุหลาบสีชมพูอ่อน 24 ดอก พร้อมใบยูคาลิปตัสและดอกไม้ประดับ เหมาะสำหรับงานแต่งงานและงานพิธี",
+      "basePrice": 2590,
+      "imageUrl": "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800",
+      "isAvailable": true
+    },
+    {
+      "id": "prod-002",
+      "categoryId": "cat-002",
+      "name": "ช่อทิวลิปพาสเทล",
+      "description": "ช่อทิวลิปสีพาสเทลหวานๆ ผสมสีชมพู ม่วง และขาว สดใหม่จากฟาร์ม",
+      "basePrice": 1890,
+      "imageUrl": "https://images.unsplash.com/photo-1520763185298-1b434c919102?w=800",
+      "isAvailable": true
+    },
+    {
+      "id": "prod-003",
+      "categoryId": "cat-003",
+      "name": "ช่อดอกไม้ผสม Garden Dream",
+      "description": "ช่อดอกไม้ผสมหรูหรา ประกอบด้วยกุหลาบ ลิลลี่ ไฮเดรนเยีย และดอกไม้นำเข้าพิเศษ",
+      "basePrice": 3200,
+      "imageUrl": "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=800",
+      "isAvailable": true
+    },
+    {
+      "id": "prod-004",
+      "categoryId": "cat-004",
+      "name": "ช่อดอกไม้ Minimalist Chic",
+      "description": "ช่อดอกไม้ขาวล้วนสไตล์มินิมอล เรียบง่ายแต่ดูหรูหรา",
+      "basePrice": 1490,
+      "imageUrl": "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800",
+      "isAvailable": true
+    },
+    {
+      "id": "prod-005",
+      "categoryId": "cat-002",
+      "name": "ช่อดอกคาร์เนชั่นสีสด",
+      "description": "ช่อดอกคาร์เนชั่นสีสันสดใส ทนทานและสวยงามยาวนาน",
+      "basePrice": 890,
+      "imageUrl": "https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=800",
+      "isAvailable": true
+    },
+    {
+      "id": "prod-006",
+      "categoryId": "cat-001",
+      "name": "ช่อเจ้าสาว Romantic Rose",
+      "description": "ช่อเจ้าสาวกุหลาบสีขาวและชมพูอ่อน ตกแต่งด้วยริบบิ้นซาติน",
+      "basePrice": 3500,
+      "imageUrl": "https://images.unsplash.com/photo-1535254973040-607b474cb50d?w=800",
+      "isAvailable": true
+    },
+    {
+      "id": "prod-007",
+      "categoryId": "cat-003",
+      "name": "ช่อดอกไม้ Luxury Bloom",
+      "description": "ช่อดอกไม้หรูหราพิเศษ ประกอบด้วยดอกไม้นำเข้าชั้นเลิศ",
+      "basePrice": 4200,
+      "imageUrl": "https://images.unsplash.com/photo-1502977249166-824b3a8a4d6d?w=800",
+      "isAvailable": true
+    },
+    {
+      "id": "prod-008",
+      "categoryId": "cat-002",
+      "name": "ช่อดอกทานตะวัน Sunshine",
+      "description": "ช่อดอกทานตะวันสดใส เติมความสุขให้ทุกวัน",
+      "basePrice": 1290,
+      "imageUrl": "https://images.unsplash.com/photo-1597848212624-e530bb5f0e00?w=800",
+      "isAvailable": true
+    }
+  ],
+  "optionGroups": [
+    {
+      "id": "og-001",
+      "productId": "prod-001",
+      "name": "บรรจุภัณฑ์",
+      "description": "เลือกรูปแบบการห่อช่อดอกไม้",
+      "isRequired": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "displayOrder": 1
+    },
+    {
+      "id": "og-002",
+      "productId": "prod-001",
+      "name": "การ์ดข้อความ",
+      "description": "เพิ่มการ์ดพร้อมข้อความพิเศษ",
+      "isRequired": false,
+      "minSelect": 0,
+      "maxSelect": 1,
+      "displayOrder": 2
+    },
+    {
+      "id": "og-003",
+      "productId": "prod-002",
+      "name": "ขนาดช่อ",
+      "description": "เลือกขนาดช่อดอกไม้",
+      "isRequired": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "displayOrder": 1
+    },
+    {
+      "id": "og-004",
+      "productId": "prod-002",
+      "name": "เพิ่มใบไม้ประดับ",
+      "description": "เพิ่มใบไม้ประดับเพื่อความสวยงาม",
+      "isRequired": false,
+      "minSelect": 0,
+      "maxSelect": 2,
+      "displayOrder": 2
+    },
+    {
+      "id": "og-005",
+      "productId": "prod-003",
+      "name": "สีโทนหลัก",
+      "description": "เลือกโทนสีของช่อดอกไม้",
+      "isRequired": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "displayOrder": 1
+    },
+    {
+      "id": "og-006",
+      "productId": "prod-003",
+      "name": "บริการเสริม",
+      "description": "เลือกบริการเสริมได้หลายอย่าง",
+      "isRequired": false,
+      "minSelect": 0,
+      "maxSelect": 3,
+      "displayOrder": 2
+    },
+    {
+      "id": "og-007",
+      "productId": "prod-004",
+      "name": "ดอกไม้หลัก",
+      "description": "เลือกดอกไม้หลักของช่อ",
+      "isRequired": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "displayOrder": 1
+    },
+    {
+      "id": "og-008",
+      "productId": "prod-004",
+      "name": "กระดาษห่อ",
+      "description": "เลือกสไตล์กระดาษห่อ",
+      "isRequired": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "displayOrder": 2
+    }
+  ],
+  "options": [
+    {
+      "id": "opt-001",
+      "optionGroupId": "og-001",
+      "name": "กล่องของขวัญหรู",
+      "description": "กล่องแข็งพรีเมียมพร้อมริบบิ้นซาติน",
+      "priceModifier": 450,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-002",
+      "optionGroupId": "og-001",
+      "name": "ห่อคราฟท์เป็นมิตรกับสิ่งแวดล้อม",
+      "description": "กระดาษคราฟท์รีไซเคิลพร้อมเชือกปอ",
+      "priceModifier": 120,
+      "isAvailable": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "opt-003",
+      "optionGroupId": "og-001",
+      "name": "ห่อพลาสติกใส",
+      "description": "พลาสติกใสพร้อมริบบิ้นสี",
+      "priceModifier": 0,
+      "isAvailable": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "opt-004",
+      "optionGroupId": "og-002",
+      "name": "การ์ดมาตรฐาน",
+      "description": "การ์ดขาวพร้อมซองและปากกา",
+      "priceModifier": 0,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-005",
+      "optionGroupId": "og-002",
+      "name": "การ์ดพิมพ์พิเศษ",
+      "description": "การ์ดพิมพ์ข้อความด้วยเครื่องพิมพ์คุณภาพสูง",
+      "priceModifier": 80,
+      "isAvailable": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "opt-006",
+      "optionGroupId": "og-003",
+      "name": "เล็ก - 12 ดอก",
+      "description": "ช่อขนาดเล็กกะทัดรัด",
+      "priceModifier": 0,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-007",
+      "optionGroupId": "og-003",
+      "name": "กลาง - 24 ดอก",
+      "description": "ช่อขนาดกลางเหมาะสำหรับมอบเป็นของขวัญ",
+      "priceModifier": 600,
+      "isAvailable": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "opt-008",
+      "optionGroupId": "og-003",
+      "name": "ใหญ่ - 36 ดอก",
+      "description": "ช่อขนาดใหญ่สำหรับโอกาสพิเศษ",
+      "priceModifier": 1200,
+      "isAvailable": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "opt-009",
+      "optionGroupId": "og-004",
+      "name": "ใบยูคาลิปตัส",
+      "description": "ใบยูคาลิปตัสสดหอมเย็น",
+      "priceModifier": 150,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-010",
+      "optionGroupId": "og-004",
+      "name": "ใบเฟิร์น",
+      "description": "ใบเฟิร์นเขียวสดใส",
+      "priceModifier": 100,
+      "isAvailable": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "opt-011",
+      "optionGroupId": "og-005",
+      "name": "โทนชมพู-ขาว",
+      "description": "โทนสีหวานละมุนโรแมนติก",
+      "priceModifier": 0,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-012",
+      "optionGroupId": "og-005",
+      "name": "โทนม่วง-ฟ้า",
+      "description": "โทนสีเย็นสงบสง่างาม",
+      "priceModifier": 200,
+      "isAvailable": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "opt-013",
+      "optionGroupId": "og-005",
+      "name": "โทนส้ม-เหลือง",
+      "description": "โทนสีอบอุ่นสดใส",
+      "priceModifier": 200,
+      "isAvailable": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "opt-014",
+      "optionGroupId": "og-006",
+      "name": "จัดส่งด่วน",
+      "description": "จัดส่งภายใน 2 ชั่วโมง",
+      "priceModifier": 300,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-015",
+      "optionGroupId": "og-006",
+      "name": "แจกันแก้วพรีเมียม",
+      "description": "แจกันแก้วคริสตัลสวยงาม",
+      "priceModifier": 800,
+      "isAvailable": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "opt-016",
+      "optionGroupId": "og-006",
+      "name": "ตุ๊กตาหมี",
+      "description": "ตุ๊กตาหมีน่ารักขนาด 8 นิ้ว",
+      "priceModifier": 450,
+      "isAvailable": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "opt-017",
+      "optionGroupId": "og-007",
+      "name": "กุหลาบขาว",
+      "description": "กุหลาบขาวบริสุทธิ์",
+      "priceModifier": 0,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-018",
+      "optionGroupId": "og-007",
+      "name": "ลิลลี่ขาว",
+      "description": "ลิลลี่ขาวหอมหวาน",
+      "priceModifier": 300,
+      "isAvailable": true,
+      "displayOrder": 2
+    },
+    {
+      "id": "opt-019",
+      "optionGroupId": "og-007",
+      "name": "คาร์เนชั่นขาว",
+      "description": "คาร์เนชั่นขาวทนทาน",
+      "priceModifier": -200,
+      "isAvailable": true,
+      "displayOrder": 3
+    },
+    {
+      "id": "opt-020",
+      "optionGroupId": "og-008",
+      "name": "กระดาษคราฟท์ธรรมดา",
+      "description": "กระดาษคราฟท์สีน้ำตาลธรรมชาติ",
+      "priceModifier": 0,
+      "isAvailable": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "opt-021",
+      "optionGroupId": "og-008",
+      "name": "กระดาษคราฟท์พิมพ์ลาย",
+      "description": "กระดาษคราฟท์พิมพ์ลายดอกไม้",
+      "priceModifier": 80,
+      "isAvailable": true,
+      "displayOrder": 2
+    }
+  ]
+}

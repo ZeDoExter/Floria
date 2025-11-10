@@ -11,6 +11,11 @@ export class OrdersController {
     return this.proxy.get('order', '/orders', { user: req.user });
   }
 
+  @Get('customer-orders')
+  listCustomerOrders(@Req() req: RequestWithUser) {
+    return this.proxy.get('order', '/orders/customer-orders', { user: req.user });
+  }
+
   @Post()
   create(@Req() req: RequestWithUser, @Body() body: unknown) {
     return this.proxy.post('order', '/orders', body, { user: req.user });

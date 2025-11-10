@@ -8,7 +8,6 @@ export const NavBar = () => {
   const { user, logout } = useAuth();
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const canAccessDashboard = user ? hasDashboardAccess(user.role) : false;
-  const isAdmin = user?.role === 'admin';
   const isOwner = user?.role === 'owner';
   const ordersLabel = isOwner ? 'Customer orders' : 'Orders';
 
@@ -27,20 +26,20 @@ export const NavBar = () => {
           <NavLink to="/" style={({ isActive }) => linkStyle(isActive)}>
             Home
           </NavLink>
-          <NavLink to="/orders" style={({ isActive }) => linkStyle(isActive)}>
-            {ordersLabel}
-          </NavLink>
           <NavLink to="/cart" style={({ isActive }) => linkStyle(isActive)}>
             Cart ({itemCount})
           </NavLink>
+          <NavLink to="/orders" style={({ isActive }) => linkStyle(isActive)}>
+            Orders
+          </NavLink>
+          {isOwner && (
+            <NavLink to="/customer-orders" style={({ isActive }) => linkStyle(isActive)}>
+              Customer orders
+            </NavLink>
+          )}
           {canAccessDashboard && (
             <NavLink to="/admin/catalog" style={({ isActive }) => linkStyle(isActive)}>
               Catalog dashboard
-            </NavLink>
-          )}
-          {isAdmin && (
-            <NavLink to="/admin/users" style={({ isActive }) => linkStyle(isActive)}>
-              Users
             </NavLink>
           )}
           {user ? (

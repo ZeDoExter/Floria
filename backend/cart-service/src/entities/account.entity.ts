@@ -29,6 +29,9 @@ export class Account {
   @Column({ type: 'varchar', nullable: true })
   providerId!: string | null;
 
+  @Column({ type: 'varchar', default: 'customer' })
+  role!: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

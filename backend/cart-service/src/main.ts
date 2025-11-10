@@ -4,16 +4,25 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: false });
   const configService = app.get(ConfigService);
-  const referrerPolicy = configService.get('REFERRER_POLICY') || 'no-referrer-when-downgrade';
-  app.enableCors({ origin: configService.get('CORS_ORIGIN') || '*', credentials: true });
+
+  const corsOrigin = configService.get('CORS_ORIGIN') || 'http://localhost:4173';
+  app.enableCors({
+    origin: corsOrigin,
+    credentials: true,
+    exposedHeaders: ['x-total-count'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-user-email', 'x-user-role']
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true
     })
   );
+
   const port = configService.get('PORT') || 3002;
   await app.listen(port);
   // eslint-disable-next-line no-console

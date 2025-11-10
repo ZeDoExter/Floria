@@ -16,7 +16,10 @@ export const ProductDetailPage = () => {
   const [groupErrors, setGroupErrors] = useState<Record<string, string | null>>({});
   const { addItem } = useCart();
   const { user } = useAuth();
-  const canOrder = user ? canPlaceOrders(user.role) : true;
+  
+  // Owner can order from other owners' shops, but not their own
+  const isOwnProduct = user && product && user.userId === product.ownerId;
+  const canOrder = user ? (canPlaceOrders(user.role) && !isOwnProduct) : true;
 
   useEffect(() => {
     if (!productId) {
@@ -95,14 +98,24 @@ export const ProductDetailPage = () => {
     });
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) {
       return;
     }
     setFormError(null);
 
+    if (!user) {
+      setFormError('กรุณา login ก่อนเพิ่มสินค้าลงตะกร้า');
+      return;
+    }
+
+    if (isOwnProduct) {
+      setFormError('คุณไม่สามารถสั่งซื้อสินค้าจากร้านตัวเองได้');
+      return;
+    }
+    
     if (!canOrder) {
-      setFormError('Store owners cannot place orders from their own catalog.');
+      setFormError('กรุณา login ก่อนสั่งซื้อสินค้า');
       return;
     }
 
@@ -136,8 +149,13 @@ export const ProductDetailPage = () => {
 
     setGroupErrors(nextGroupErrors);
     const optionIds = Object.values(selectedOptions).flat();
-    addItem({ productId: product.id, quantity: 1, selectedOptionIds: optionIds, unitPrice: price, productName: product?.name ?? "" } as any);
-    navigate('/cart');
+    
+    try {
+      await addItem({ productId: product.id, quantity: 1, selectedOptionIds: optionIds, unitPrice: price, productName: product?.name ?? "" } as any);
+      navigate('/cart');
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
+    }
   };
 
   if (isLoading) {

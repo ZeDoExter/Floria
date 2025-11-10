@@ -31,10 +31,27 @@ export interface Credentials {
 export interface AuthResponse {
   token: string;
   displayName: string;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export const loginRequest = async (credentials: Credentials): Promise<AuthResponse> => {
   const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+  return response.data;
+};
+
+export const registerRequest = async (data: RegisterData): Promise<AuthResponse> => {
+  const response = await apiClient.post<AuthResponse>('/auth/register', data);
   return response.data;
 };
 

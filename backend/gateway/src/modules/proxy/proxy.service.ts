@@ -7,6 +7,7 @@ export interface AuthenticatedUser {
   userId: string;
   email: string;
   displayName?: string;
+  role?: string;
 }
 
 export interface ForwardContext {
@@ -62,6 +63,9 @@ export class ProxyService {
     if (context.user) {
       headers['x-user-id'] = context.user.userId;
       headers['x-user-email'] = context.user.email;
+      if (context.user.role) {
+        headers['x-user-role'] = context.user.role;
+      }
     }
 
     const response = await this.http.axiosRef.request<T>({

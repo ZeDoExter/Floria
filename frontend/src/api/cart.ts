@@ -4,6 +4,7 @@ export type CartItemInput = {
   productId: string;
   quantity: number;
   selectedOptionIds: string[];
+  unitPrice?: number;
 };
 
 export type CartItemResponse = CartItemInput & {

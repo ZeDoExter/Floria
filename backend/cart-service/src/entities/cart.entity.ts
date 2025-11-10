@@ -19,7 +19,7 @@ export class Cart {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @ManyToOne(() => User, (user: User) => user.carts, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user: User) => user.carts, { nullable: true, onDelete: 'CASCADE', createForeignKeyConstraints: false })
   @JoinColumn({ name: 'userId' })
   user!: Relation<User>;
 

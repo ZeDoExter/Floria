@@ -46,7 +46,7 @@ export class OrdersService {
     private readonly userRepository: Repository<User>
   ) {}
 
-  async listOrders(userId: string | undefined, userEmail: string | undefined): Promise<SerializedOrderList> {
+  async listMyOrders(userId: string | undefined): Promise<SerializedOrderList> {
     if (!userId) {
       throw new UnauthorizedException('User authentication required');
     }
@@ -59,6 +59,7 @@ export class OrdersService {
       throw new NotFoundException('User not found');
     }
 
+    // Return orders that this user placed
     const orders = await this.orderRepository.find({
       where: { userId: user.id },
       relations: ['items'],
@@ -73,6 +74,43 @@ export class OrdersService {
         createdAt: order.createdAt,
         notes: order.notes,
         deliveryDate: order.deliveryDate
+      }))
+    };
+  }
+
+  async listCustomerOrders(userId: string | undefined, userEmail: string | undefined): Promise<SerializedOrderList> {
+    if (!userId) {
+      throw new UnauthorizedException('User authentication required');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Owner sees orders containing their products
+    const orders = await this.orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoin('items.product', 'product')
+      .leftJoin('order.user', 'orderUser')
+      .where('product.ownerId = :ownerId', { ownerId: user.id })
+      .orderBy('order.createdAt', 'DESC')
+      .addSelect(['orderUser.email'])
+      .getMany();
+
+    return {
+      orders: orders.map((order: Order) => ({
+        id: order.id,
+        totalAmount: Number(order.totalAmount),
+        status: order.status,
+        createdAt: order.createdAt,
+        notes: order.notes,
+        deliveryDate: order.deliveryDate,
+        customerEmail: order.user?.email || userEmail
       }))
     };
   }
