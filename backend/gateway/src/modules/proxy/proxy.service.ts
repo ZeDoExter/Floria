@@ -4,8 +4,9 @@ import { ConfigService } from '@nestjs/config';
 
 export interface AuthenticatedUser {
   sub: string;
-  cognito_user_id: string;
-  displayName: string;
+  userId: string;
+  email: string;
+  displayName?: string;
 }
 
 export interface ForwardContext {
@@ -59,8 +60,8 @@ export class ProxyService {
     const headers: Record<string, string> = { 'content-type': 'application/json', ...(context.headers ?? {}) };
 
     if (context.user) {
-      headers['x-user-id'] = context.user.cognito_user_id;
-      headers['x-user-email'] = context.user.sub;
+      headers['x-user-id'] = context.user.userId;
+      headers['x-user-email'] = context.user.email;
     }
 
     const response = await this.http.axiosRef.request<T>({

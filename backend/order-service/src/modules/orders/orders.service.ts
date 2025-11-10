@@ -4,112 +4,154 @@ import {
   NotFoundException,
   UnauthorizedException
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto.js';
-import { Decimal } from '@prisma/client/runtime/library';
 import type {
   CalculatedProductPricing,
   OrderStatus,
-  OrderWithItems,
   PreparedOrderItem,
   ProductOption,
   ProductWithOptionGroups,
   SerializedOrderDetail,
   SerializedOrderList
 } from './orders.types.js';
-import { decodeLocalUserEmail, getOwnerStoreKey, getUserRole, type StoreKey } from './roles.js';
+
+import { Order } from '../../entities/order.entity.js';
+import { OrderItem } from '../../entities/order-item.entity.js';
+import { Product } from '../../entities/product.entity.js';
+import { OptionGroup } from '../../entities/option-group.entity.js';
+import { Option } from '../../entities/option.entity.js';
+import { CartItem } from '../../entities/cart-item.entity.js';
+import { Cart } from '../../entities/cart.entity.js';
+import { User } from '../../entities/user.entity.js';
+import { getUserRole } from './roles.js';
+
+type OrderWithUser = Order & { user?: User };
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
+    @InjectRepository(OrderItem)
+    private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+    @InjectRepository(CartItem)
+    private readonly cartItemRepository: Repository<CartItem>,
+    @InjectRepository(Cart)
+    private readonly cartRepository: Repository<Cart>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
+  ) {}
 
-  async listOrders(cognitoUserId: string | undefined, userEmail: string | undefined): Promise<SerializedOrderList> {
-    const role = getUserRole(userEmail);
-
-    if (!cognitoUserId && role !== 'owner') {
+  async listOrders(userId: string | undefined, userEmail: string | undefined): Promise<SerializedOrderList> {
+    if (!userId) {
       throw new UnauthorizedException('User authentication required');
     }
 
-    const where = role === 'owner'
-      ? { storeKey: getOwnerStoreKey(userEmail) }
-      : { cognito_user_id: cognitoUserId };
-
-    const orders = await this.prisma.order.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { items: true }
+    const user = await this.userRepository.findOne({
+      where: { id: userId }
     });
-    type OrderWithItemsPrisma = typeof orders[number];
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const orders = await this.orderRepository.find({
+      where: { userId: user.id },
+      relations: ['items'],
+      order: { createdAt: 'DESC' }
+    });
 
     return {
-      orders: orders.map((order: OrderWithItemsPrisma) => ({
+      orders: orders.map((order: Order) => ({
         id: order.id,
         totalAmount: Number(order.totalAmount),
         status: order.status,
         createdAt: order.createdAt,
         notes: order.notes,
-        deliveryDate: order.deliveryDate,
-        storeKey: order.storeKey as StoreKey,
-        customerId: role === 'owner' ? order.cognito_user_id : undefined,
-        customerEmail: role === 'owner' ? decodeLocalUserEmail(order.cognito_user_id) : undefined
+        deliveryDate: order.deliveryDate
       }))
     };
   }
 
   private async calculateItem(productId: string, optionIds: string[]): Promise<CalculatedProductPricing> {
-    const product = (await this.prisma.product.findUnique({
+    const product = await this.productRepository.findOne({
       where: { id: productId },
-      include: {
-        optionGroups: {
-          include: { options: true }
-        }
-      }
-    })) as ProductWithOptionGroups | null;
+      relations: ['optionGroups', 'optionGroups.options']
+    });
 
-    if (!product) {
+    if (!product || !product.optionGroups) {
       throw new NotFoundException(`Product ${productId} not found`);
     }
 
-    const basePrice = new Decimal(product.basePrice);
-    const selectedOptions: ProductOption[] = product.optionGroups
-      .flatMap((group) => group.options)
-      .filter((option): option is ProductOption => optionIds.includes(option.id));
-    const modifiers = selectedOptions.reduce<Decimal>(
-      (total, option) => total.add(option.priceModifier),
-      new Decimal(0)
+    const basePrice = Number(product.basePrice);
+    const allOptions: Option[] = [];
+    for (const group of product.optionGroups) {
+      if (group.options) {
+        allOptions.push(...group.options);
+      }
+    }
+
+    const selectedOptions: ProductOption[] = allOptions
+      .filter((option: Option) => optionIds.includes(option.id))
+      .map((option: Option) => ({
+        id: option.id,
+        name: option.name,
+        priceModifier: Number(option.priceModifier)
+      }));
+
+    const modifiers = selectedOptions.reduce(
+      (total, option) => total + option.priceModifier,
+      0
     );
-    const unitPrice = basePrice.add(modifiers);
+    const unitPrice = basePrice + modifiers;
 
     return {
-      product,
+      product: {
+        id: product.id,
+        name: product.name,
+        basePrice: Number(product.basePrice),
+        optionGroups: product.optionGroups.map((group: OptionGroup) => ({
+          id: group.id,
+          name: group.name,
+          options: (group.options || []).map((opt: Option) => ({
+            id: opt.id,
+            name: opt.name,
+            priceModifier: Number(opt.priceModifier)
+          }))
+        }))
+      },
       selectedOptions,
       unitPrice
     };
   }
 
-  async createOrder(cognitoUserId: string | undefined, dto: CreateOrderDto): Promise<SerializedOrderDetail> {
-    if (!cognitoUserId) {
+  async createOrder(userId: string | undefined, dto: CreateOrderDto): Promise<SerializedOrderDetail> {
+    if (!userId) {
       throw new UnauthorizedException('User authentication required');
     }
 
+    const user = await this.userRepository.findOne({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     const orderItems: PreparedOrderItem[] = [];
 
-    let total = new Decimal(0);
-    let storeKey: StoreKey = 'flagship';
-    let assignedStoreKey: StoreKey | null = null;
+    let total = 0;
 
     for (const item of dto.items) {
       const { product, selectedOptions, unitPrice } = await this.calculateItem(
         item.productId,
         item.selectedOptionIds
       );
-      const productStoreKey = product.storeKey;
-      if (assignedStoreKey && assignedStoreKey !== productStoreKey) {
-        throw new BadRequestException('Orders cannot include items from multiple storefronts.');
-      }
-      assignedStoreKey = productStoreKey;
-      const lineTotal = unitPrice.mul(item.quantity);
-      total = total.add(lineTotal);
+      const lineTotal = unitPrice * item.quantity;
+      total = total + lineTotal;
       orderItems.push({
         productId: product.id,
         productName: product.name,
@@ -120,97 +162,89 @@ export class OrdersService {
           selectedOptions: selectedOptions.map((option) => ({
             id: option.id,
             name: option.name,
-            priceModifier: Number(option.priceModifier)
+            priceModifier: option.priceModifier
           }))
         }
       });
     }
 
-    if (assignedStoreKey) {
-      storeKey = assignedStoreKey;
-    }
-
-    const order = await this.prisma.order.create({
-      data: {
-        cognito_user_id: cognitoUserId,
-        totalAmount: total,
-        status: 'PLACED',
-        storeKey,
-        notes: dto.notes,
-        deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : null,
-        items: {
-          create: orderItems.map((item) => ({
-            productId: item.productId,
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            optionSnapshot: item.optionSnapshot
-          }))
-        }
-      },
-      include: {
-        items: true
-      }
+    const order = this.orderRepository.create({
+      userId: user.id,
+      totalAmount: total,
+      status: 'PLACED',
+      notes: dto.notes,
+      deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : null
     });
 
-    // Clear cart after successful order
-    await this.prisma.cartItem
-      .deleteMany({
-        where: {
-          cart: {
-            cognito_user_id: cognitoUserId
-          }
-        }
+    const savedOrder = await this.orderRepository.save(order);
+
+    const orderItemsToCreate = orderItems.map((item) =>
+      this.orderItemRepository.create({
+        orderId: savedOrder.id,
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        optionSnapshot: item.optionSnapshot
       })
-      .catch(() => undefined);
+    );
+
+    await this.orderItemRepository.save(orderItemsToCreate);
+
+    // Clear cart after successful order
+    const cart = await this.cartRepository.findOne({
+      where: { userId: user.id },
+      relations: ['items']
+    });
+
+    if (cart) {
+      await this.cartItemRepository.delete({ cartId: cart.id });
+    }
 
     return {
       order: {
-        id: order.id,
-        totalAmount: Number(order.totalAmount),
-        status: order.status,
-        createdAt: order.createdAt,
-        notes: order.notes,
-        deliveryDate: order.deliveryDate,
-        storeKey: order.storeKey as StoreKey
+        id: savedOrder.id,
+        totalAmount: Number(savedOrder.totalAmount),
+        status: savedOrder.status,
+        createdAt: savedOrder.createdAt,
+        notes: savedOrder.notes,
+        deliveryDate: savedOrder.deliveryDate
       }
     };
   }
 
-  async updateOrderStatus(
-    userEmail: string | undefined,
-    orderId: string,
-    status: OrderStatus
-  ): Promise<SerializedOrderDetail> {
-    const role = getUserRole(userEmail);
-
-    if (role !== 'owner') {
-      throw new UnauthorizedException('Only store owners can update order status.');
+  async updateOrderStatus(userEmail: string | undefined, orderId: string, status: OrderStatus): Promise<void> {
+    if (!userEmail) {
+      throw new UnauthorizedException('User authentication required');
     }
 
-    const storeKey = getOwnerStoreKey(userEmail);
+    const user = await this.userRepository.findOne({
+      where: { email: userEmail }
+    });
 
-    const existingOrder = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-    if (!existingOrder || existingOrder.storeKey !== storeKey) {
+    // Check if user has permission to update order status (e.g., admin or order owner)
+    // For now, allow if user is admin or the order belongs to them
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['user']
+    });
+
+    if (!order) {
       throw new NotFoundException('Order not found');
     }
 
-    const order = await this.prisma.order.update({
-      where: { id: orderId },
-      data: { status }
-    });
+    // Allow update if user is admin or owns the order
+    const userRole = getUserRole(user.email);
+    if (userRole !== 'admin' && order.userId !== user.id) {
+      throw new UnauthorizedException('You do not have permission to update this order status');
+    }
 
-    return {
-      order: {
-        id: order.id,
-        totalAmount: Number(order.totalAmount),
-        status: order.status,
-        createdAt: order.createdAt,
-        notes: order.notes,
-        deliveryDate: order.deliveryDate,
-        storeKey: order.storeKey as StoreKey
-      }
-    };
+    // Update the order status
+    await this.orderRepository.update(orderId, { status });
   }
+
 }

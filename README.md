@@ -1,21 +1,115 @@
 # FloraTailor
 
-## Sample accounts and roles
+## เมลไว้ลอง
 
-The local authentication stub accepts **any** password and derives the signed-in role purely from the email. Use these curated accounts to exercise every permission level in the app:
-
-| Email | Role | Highlights |
+| อีเมล | Role | รายละเอียด |
 | --- | --- | --- |
-| `flora.owner@example.com` | Store owner | Manages the flagship storefront, can edit all catalog resources, reviews every customer order, and is blocked from placing their own purchases. |
-| `flora.owner.market@example.com` | Store owner | Second owner profile for multi-owner QA. Shares the same back-office powers and checkout restrictions as the main owner account. |
-| `flora.admin@example.com` | Administrator | Shops like a customer, audits the catalog in read-only mode, and can open the in-app user directory to view all seeded logins. |
-| `flora.customer@example.com` | Customer | Baseline shopper used for checkout flows and personal order history testing. |
-| `flora.customer.guest@example.com` | Customer | Extra shopper to validate parallel carts and order histories. |
+| `flora.owner@example.com` | เจ้าของร้าน | จัดการสินค้า หมวดหมู่ และดูคำสั่งซื้อทั้งหมด (ไม่สามารถสั่งซื้อเองได้) |
+| `flora.owner.market@example.com` | เจ้าของร้าน | บัญชีเจ้าของร้านคนที่ 2 สำหรับทดสอบ |
+| `flora.customer@example.com` | ลูกค้า | ทดสอบการสั่งซื้อและดูประวัติคำสั่งซื้อ |
+| `flora.customer.guest@example.com` | ลูกค้า | บัญชีลูกค้าคนที่ 2 สำหรับทดสอบตะกร้าและคำสั่งซื้อแยกกัน |
 
-All other email addresses continue to be treated as standard customers.
+## API Endpoints
 
-## Development quick start
+| Service | Endpoint | คำอธิบาย |
+|---------|----------|----------|
+| Auth | `POST /auth/login` | เข้าสู่ระบบและรับ JWT token |
+| Products | `GET /products` | ดูรายการสินค้าทั้งหมด |
+| Products | `POST /products` | สร้างสินค้าใหม่ (ต้องเป็นเจ้าของร้าน) |
+| Catalog | `GET /categories` | ดูหมวดหมู่ทั้งหมด |
+| Catalog | `POST /categories` | สร้างหมวดหมู่ใหม่ (ต้องเป็นเจ้าของร้าน) |
+| Options | `POST /option-groups` | สร้างกลุ่มตัวเลือก |
+| Options | `POST /options` | สร้างตัวเลือก |
 
-1. Install dependencies: `npm install`
-2. Run the development servers with `docker compose up`
-3. Open the frontend at http://localhost:5173 and sign in using one of the sample accounts above.
+## Template สำหรับสร้างสินค้า
+
+### สร้างหมวดหมู่
+```json
+{
+  "name": "ช่อดอกไม้งานแต่ง",
+  "description": "ช่อดอกไม้พรีเมียมสำหรับงานพิธี"
+}
+```
+
+### สร้างสินค้า
+```json
+{
+  "name": "ช่อกุหลาบออโรร่า",
+  "description": "ช่อกุหลาบ 24 ดอก พร้อมใบยูคาลิปตัส",
+  "basePrice": 2590,
+  "imageUrl": "https://cdn.example.com/products/rose-aurora.jpg",
+  "categoryId": "category-id-here"
+}
+```
+
+### สร้างกลุ่มตัวเลือก (Option Group)
+```json
+{
+  "productId": "product-id-here",
+  "name": "บรรจุภัณฑ์",
+  "description": "เลือกรูปแบบการห่อ",
+  "isRequired": true,
+  "minSelect": 1,
+  "maxSelect": 1
+}
+```
+
+### สร้างตัวเลือก (Option)
+```json
+{
+  "optionGroupId": "option-group-id-here",
+  "name": "กล่องของขวัญหรู",
+  "description": "กล่องแข็งพร้อมริบบิ้นซาติน",
+  "priceModifier": 450
+}
+```
+
+## ตัวอย่างสินค้าแนะนำ
+
+### 1. ช่อกุหลาบออโรร่า
+- **ราคาเริ่มต้น:** 2,590 บาท
+- **หมวดหมู่:** ช่อดอกไม้งานแต่ง
+- **ตัวเลือก:**
+  - บรรจุภัณฑ์ (บังคับเลือก):
+    - กล่องของขวัญหรู (+450 บาท)
+    - ห่อคราฟท์เป็นมิตรกับสิ่งแวดล้อม (+120 บาท)
+  - การ์ดข้อความ (ไม่บังคับ):
+    - การ์ดมาตรฐาน (ฟรี)
+    - การ์ดพิมพ์พิเศษ (+80 บาท)
+
+### 2. ช่อทิวลิปพาสเทล
+- **ราคาเริ่มต้น:** 1,890 บาท
+- **หมวดหมู่:** ช่อดอกไม้ประจำวัน
+- **ตัวเลือก:**
+  - ขนาดช่อ (บังคับเลือก):
+    - เล็ก - 12 ดอก (ราคาฐาน)
+    - กลาง - 24 ดอก (+600 บาท)
+    - ใหญ่ - 36 ดอก (+1,200 บาท)
+  - เพิ่มใบไม้ประดับ (ไม่บังคับ):
+    - ใบยูคาลิปตัส (+150 บาท)
+    - ใบเฟิร์น (+100 บาท)
+
+### 3. ช่อดอกไม้ผสม "Garden Dream"
+- **ราคาเริ่มต้น:** 3,200 บาท
+- **หมวดหมู่:** ช่อดอกไม้พรีเมียม
+- **ตัวเลือก:**
+  - สีโทนหลัก (บังคับเลือก):
+    - โทนชมพู-ขาว (ราคาฐาน)
+    - โทนม่วง-ฟ้า (+200 บาท)
+    - โทนส้ม-เหลือง (+200 บาท)
+  - บริการเสริม (เลือกได้หลายอย่าง):
+    - จัดส่งด่วน (+300 บาท)
+    - แจกันแก้วพรีเมียม (+800 บาท)
+    - ตุ๊กตาหมี (+450 บาท)
+
+### 4. ช่อดอกไม้ "Minimalist Chic"
+- **ราคาเริ่มต้น:** 1,490 บาท
+- **หมวดหมู่:** ช่อดอกไม้สไตล์มินิมอล
+- **ตัวเลือก:**
+  - ดอกไม้หลัก (บังคับเลือก):
+    - กุหลาบขาว (ราคาฐาน)
+    - ลิลลี่ขาว (+300 บาท)
+    - คาร์เนชั่นขาว (-200 บาท)
+  - กระดาษห่อ (บังคับเลือก):
+    - กระดาษคราฟท์ธรรมดา (ฟรี)
+    - กระดาษคราฟท์พิมพ์ลาย (+80 บาท)

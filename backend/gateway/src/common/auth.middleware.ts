@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { JwtService } from './jwt.service.js';
+import { JwtService } from '@nestjs/jwt';
 import { AuthenticatedUser } from '../modules/proxy/proxy.service.js';
+import { JwtPayload } from './jwt.service.js';
 
 export interface RequestHeaders {
   authorization?: string;
@@ -24,11 +25,12 @@ export class AuthMiddleware implements NestMiddleware<RequestWithUser, unknown> 
     if (header?.startsWith('Bearer ')) {
       const token = header.slice('Bearer '.length);
       try {
-        const payload = this.jwtService.verify(token);
+        const payload = this.jwtService.verify<JwtPayload>(token);
         req.user = {
           sub: payload.sub,
-          displayName: payload.displayName,
-          cognito_user_id: payload.cognito_user_id
+          userId: payload.userId,
+          email: payload.email,
+          displayName: payload.displayName
         };
       } catch (error) {
         // eslint-disable-next-line no-console

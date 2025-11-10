@@ -1,8 +1,6 @@
 import { apiClient } from './client';
 import { CartItemInput } from './cart';
 
-export type StoreKey = 'flagship' | 'weekend-market';
-
 export const ORDER_STATUS_OPTIONS = [
   'PENDING',
   'PLACED',
@@ -26,15 +24,15 @@ export type OrderResponse = {
   totalAmount: number;
   status: OrderStatus;
   createdAt: string;
-  storeKey: StoreKey;
+  notes: string | null;
+  deliveryDate: string | null;
   customerEmail?: string | null;
 };
 
 const normalizeOrder = (order: any): OrderResponse => ({
   ...order,
   totalAmount: Number(order.totalAmount ?? 0),
-  status: (order.status as OrderStatus) ?? 'PENDING',
-  storeKey: (order.storeKey as StoreKey) ?? 'flagship'
+  status: (order.status as OrderStatus) ?? 'PENDING'
 });
 
 export const submitOrder = async (payload: CheckoutPayload, token: string) => {

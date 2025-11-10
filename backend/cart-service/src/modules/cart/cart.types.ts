@@ -1,8 +1,6 @@
-import type { Decimal } from '@prisma/client/runtime/library';
-
 export interface ProductOption {
   id: string;
-  priceModifier: Decimal;
+  priceModifier: number;
 }
 
 export interface OptionGroupWithOptions {
@@ -12,7 +10,7 @@ export interface OptionGroupWithOptions {
 
 export interface ProductWithOptionGroups {
   id: string;
-  basePrice: Decimal | number;
+  basePrice: number;
   optionGroups?: OptionGroupWithOptions[];
 }
 
@@ -22,7 +20,7 @@ export interface CartItemWithProduct {
   productId: string;
   quantity: number;
   selectedOptionIds: string[];
-  unitPrice: Decimal;
+  unitPrice: number;
   product: {
     id: string;
     name: string;
@@ -31,7 +29,7 @@ export interface CartItemWithProduct {
 
 export interface CartWithItemsAndProduct {
   id: string;
-  cognito_user_id: string | null;
+  userId: string | null;
   anonymousId: string | null;
   items?: CartItemWithProduct[];
 }
@@ -47,7 +45,7 @@ export interface SerializedCartItem {
 
 export interface SerializedCart {
   id?: string;
-  cognito_user_id?: string | null;
+  userId?: string | null;
   anonymousId?: string | null;
   items: SerializedCartItem[];
 }

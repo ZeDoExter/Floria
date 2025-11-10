@@ -159,16 +159,53 @@ export const ProductDetailPage = () => {
         {product.description && <p style={{ marginBottom: 6 }}>{product.description}</p>}
         <p style={{ fontSize: 20, fontWeight: 600 }}>${price.toFixed(2)}</p>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {product.optionGroups.map((group) => (
-          <div key={group.id} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 4, color: '#c2415c' }}>{group.name}</h2>
-            {group.description && <p style={{ fontSize: 14, marginBottom: 4 }}>{group.description}</p>}
-            <p style={{ fontSize: 12, color: '#555' }}>
-              {group.isRequired ? 'Required' : 'Optional'} – select between {group.minSelect} and{' '}
-              {group.maxSelect || group.options.length}
-            </p>
-            <ul style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8, padding: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {product.optionGroups.map((group, index) => (
+          <div 
+            key={group.id} 
+            style={{ 
+              border: '2px solid #e5e5e5', 
+              background: '#fff', 
+              padding: 20,
+              borderRadius: 8,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
+          >
+            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ 
+                  background: '#c2415c', 
+                  color: '#fff', 
+                  padding: '2px 8px', 
+                  borderRadius: 4, 
+                  fontSize: 12,
+                  fontWeight: 600
+                }}>
+                  {index + 1}
+                </span>
+                <h2 style={{ fontSize: 18, margin: 0, color: '#c2415c' }}>{group.name}</h2>
+                {group.isRequired && (
+                  <span style={{ 
+                    background: '#fff5f8', 
+                    color: '#c2415c', 
+                    padding: '2px 8px', 
+                    borderRadius: 4, 
+                    fontSize: 11,
+                    fontWeight: 600,
+                    border: '1px solid #f6c4d5'
+                  }}>
+                    REQUIRED
+                  </span>
+                )}
+              </div>
+              {group.description && <p style={{ fontSize: 14, margin: '4px 0 0 0', color: '#666' }}>{group.description}</p>}
+              <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0 0' }}>
+                Select {group.minSelect === group.maxSelect 
+                  ? `exactly ${group.minSelect}` 
+                  : `${group.minSelect} to ${group.maxSelect || group.options.length}`} option{(group.maxSelect || group.options.length) > 1 ? 's' : ''}
+              </p>
+            </div>
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 0, margin: 0 }}>
               {group.options.map((option) => {
                 const isSelected = selectedOptions[group.id]?.includes(option.id);
                 return (
@@ -177,24 +214,55 @@ export const ProductDetailPage = () => {
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
+                        alignItems: 'center',
                         gap: 12,
-                        border: '1px solid #eee',
-                        padding: '8px 12px',
-                        background: isSelected ? '#fde4ec' : '#fafafa',
-                        cursor: 'pointer'
+                        border: isSelected ? '2px solid #c2415c' : '1px solid #e5e5e5',
+                        padding: '12px 16px',
+                        background: isSelected ? '#fff5f8' : '#fafafa',
+                        cursor: 'pointer',
+                        borderRadius: 6,
+                        transition: 'all 0.2s'
                       }}
                     >
-                      <span>
-                        <span style={{ fontWeight: 600 }}>{option.name}</span>
-                        {option.description && <p style={{ fontSize: 12 }}>{option.description}</p>}
-                      </span>
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleOption(group, option.id)} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 600, fontSize: 15 }}>{option.name}</span>
+                          {option.priceModifier !== 0 && (
+                            <span style={{ 
+                              color: option.priceModifier > 0 ? '#c2415c' : '#2f855a',
+                              fontSize: 14,
+                              fontWeight: 600
+                            }}>
+                              {option.priceModifier > 0 ? '+' : ''}{option.priceModifier.toFixed(2)} บาท
+                            </span>
+                          )}
+                        </div>
+                        {option.description && <p style={{ fontSize: 13, margin: '4px 0 0 0', color: '#666' }}>{option.description}</p>}
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected} 
+                        onChange={() => toggleOption(group, option.id)}
+                        style={{ width: 20, height: 20, cursor: 'pointer' }}
+                      />
                     </label>
                   </li>
                 );
               })}
             </ul>
-            {groupErrors[group.id] && <p style={{ marginTop: 8, fontSize: 12, color: '#c2415c' }}>{groupErrors[group.id]}</p>}
+            {groupErrors[group.id] && (
+              <p style={{ 
+                marginTop: 12, 
+                fontSize: 13, 
+                color: '#c2415c',
+                background: '#fff5f8',
+                padding: '8px 12px',
+                borderRadius: 4,
+                border: '1px solid #f6c4d5'
+              }}>
+                ⚠️ {groupErrors[group.id]}
+              </p>
+            )}
           </div>
         ))}
       </div>

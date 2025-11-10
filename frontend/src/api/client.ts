@@ -7,6 +7,22 @@ export const apiClient = axios.create({
   withCredentials: false
 });
 
+// Add token to all requests automatically
+apiClient.interceptors.request.use((config) => {
+  const stored = localStorage.getItem('flora-tailor/auth');
+  if (stored) {
+    try {
+      const auth = JSON.parse(stored);
+      if (auth?.token) {
+        config.headers.Authorization = `Bearer ${auth.token}`;
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+  }
+  return config;
+});
+
 export interface Credentials {
   email: string;
   password: string;

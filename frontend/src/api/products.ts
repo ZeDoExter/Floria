@@ -1,5 +1,4 @@
 import { apiClient } from './client';
-import type { StoreKey } from './catalog';
 
 export interface ProductSummary {
   id: string;
@@ -9,7 +8,6 @@ export interface ProductSummary {
   imageUrl?: string;
   categoryId?: string;
   categoryName?: string;
-  storeKey: StoreKey;
 }
 
 export interface ProductDetail extends ProductSummary {
@@ -39,7 +37,6 @@ const normalizeProductSummary = (product: any): ProductSummary => ({
   basePrice: Number(product.basePrice ?? 0),
   categoryId: product.categoryId ?? product.category?.id,
   categoryName: product.category?.name ?? product.categoryName,
-  storeKey: (product.storeKey as StoreKey) ?? 'flagship'
 });
 
 const normalizeProductDetail = (product: any): ProductDetail => ({
@@ -60,12 +57,13 @@ const normalizeProductDetail = (product: any): ProductDetail => ({
   }))
 });
 
-export const fetchProducts = async () => {
-  const response = await apiClient.get('/products');
+export const fetchProducts = async (filterByOwner = false): Promise<ProductSummary[]> => {
+  const params = filterByOwner ? { filterByOwner: 'true' } : {};
+  const response = await apiClient.get('/products', { params });
   return (response.data as any[]).map(normalizeProductSummary);
 };
 
-export const fetchProductDetail = async (productId: string) => {
+export const fetchProductDetail = async (productId: string): Promise<ProductDetail> => {
   const response = await apiClient.get(`/products/${productId}`);
   return normalizeProductDetail(response.data);
 };

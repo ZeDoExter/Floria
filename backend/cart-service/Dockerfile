@@ -1,20 +1,16 @@
-FROM node:20-alpine AS build
+FROM oven/bun:1 AS build
 WORKDIR /app
-RUN apk add --no-cache openssl
-COPY prisma ./prisma
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
-RUN npm install --legacy-peer-deps
-RUN npx prisma@5.16.1 generate --schema prisma/schema.prisma
-RUN npm run build
+RUN bun install
+RUN bun run build
 
-FROM node:20-alpine
+FROM oven/bun:1
 WORKDIR /app
-RUN apk add --no-cache openssl
-COPY prisma ./prisma
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
-RUN npm install --legacy-peer-deps --omit=dev
-RUN npx prisma@5.16.1 generate --schema prisma/schema.prisma
+RUN bun install --production
 COPY --from=build /app/dist ./dist
-EXPOSE 3000
-CMD ["node", "dist/main.js"]
+EXPOSE 3004
+CMD ["bun", "dist/main.js"]

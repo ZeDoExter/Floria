@@ -3,12 +3,15 @@ import { useParams } from 'react-router-dom';
 import {
   Category,
   CreateOptionGroupInput,
-  StoreKey,
   createCategory,
   createOption,
   createOptionGroup,
   createProduct,
-  fetchCategories
+  fetchCategories,
+  deleteCategory,
+  deleteProduct,
+  deleteOptionGroup,
+  deleteOption
 } from '../api/catalog';
 import { fetchProductDetail, fetchProducts, ProductDetail } from '../api/products';
 import { useAuth } from '../context/AuthContext';
@@ -37,7 +40,6 @@ export const AdminCatalogPage = () => {
     basePrice: '',
     imageUrl: '',
     categoryId: '',
-    storeKey: 'flagship' as StoreKey
   });
   const [optionGroupForm, setOptionGroupForm] = useState({
     productId: '',
@@ -68,7 +70,11 @@ export const AdminCatalogPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [categoryData, productSummaries] = await Promise.all([fetchCategories(), fetchProducts()]);
+      // ใช้ filterByOwner=true เพื่อดึงเฉพาะของ owner ที่ login อยู่
+      const [categoryData, productSummaries] = await Promise.all([
+        fetchCategories(true), 
+        fetchProducts(true)
+      ]);
       const details = await Promise.all(
         productSummaries.map(async (summary) => {
           const detail = await fetchProductDetail(summary.id);
@@ -164,13 +170,12 @@ export const AdminCatalogPage = () => {
           description: productForm.description.trim() || undefined,
           basePrice: Number(productForm.basePrice || 0),
           imageUrl: productForm.imageUrl.trim() || undefined,
-          categoryId: productForm.categoryId,
-          storeKey: productForm.storeKey
+          categoryId: productForm.categoryId
         },
         authToken
       );
       setProductFeedback({ status: 'success', message: 'Product created successfully.' });
-      setProductForm({ name: '', description: '', basePrice: '', imageUrl: '', categoryId: '', storeKey: 'flagship' });
+      setProductForm({ name: '', description: '', basePrice: '', imageUrl: '', categoryId: ''});
       await loadCatalog();
     } catch (err) {
       console.error(err);
@@ -253,17 +258,58 @@ export const AdminCatalogPage = () => {
         </p>
       )}
 
-      <section ref={sectionRefs.categories} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Categories</h2>
-        <ul style={{ marginBottom: 12, paddingLeft: 16 }}>
-          {categories.map((category) => (
-            <li key={category.id}>
-              <strong>{category.name}</strong>
-              {category.description ? ` – ${category.description}` : ''}
-            </li>
-          ))}
-          {categories.length === 0 && <li>No categories found.</li>}
-        </ul>
+      <section ref={sectionRefs.categories} style={{ border: '1px solid #eee', background: '#fff', padding: 20, borderRadius: 8 }}>
+        <h2 style={{ fontSize: 22, marginBottom: 16, color: '#c2415c', borderBottom: '2px solid #f0f0f0', paddingBottom: 8 }}>
+          📁 Categories ({categories.length})
+        </h2>
+        {categories.length > 0 ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+            <thead>
+              <tr style={{ background: '#f8f5f5', borderBottom: '2px solid #e5e5e5' }}>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>Name</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>Description</th>
+                {canManage && <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600, width: 100 }}>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((category, index) => (
+                <tr key={category.id} style={{ borderBottom: '1px solid #f0f0f0', background: index % 2 === 0 ? '#fff' : '#fafafa' }}>
+                  <td style={{ padding: '12px', fontWeight: 600 }}>{category.name}</td>
+                  <td style={{ padding: '12px', color: '#666' }}>{category.description || '—'}</td>
+                  {canManage && (
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Delete category "${category.name}"?`)) {
+                            try {
+                              await deleteCategory(category.id, authToken);
+                              await loadCatalog();
+                            } catch (err) {
+                              alert('Failed to delete category');
+                            }
+                          }
+                        }}
+                        style={{
+                          background: '#dc2626',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '4px 12px',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 12
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: '#999', fontStyle: 'italic', marginBottom: 16 }}>No categories yet. Create your first one below.</p>
+        )}
         <form onSubmit={handleCreateCategory}>
           <fieldset
             disabled={disableCatalogActions}
@@ -298,16 +344,75 @@ export const AdminCatalogPage = () => {
         </form>
       </section>
 
-      <section ref={sectionRefs.products} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Products</h2>
-        <ul style={{ marginBottom: 12, paddingLeft: 16 }}>
-          {products.map((product) => (
-            <li key={product.id}>
-              <strong>{product.name}</strong> – ${product.basePrice.toFixed(2)} (Category: {product.category?.name ?? 'Unassigned'} · Option groups: {product.optionGroups.length} · Store: {product.storeKey === 'weekend-market' ? 'Weekend market stall' : 'Flagship boutique'})
-            </li>
-          ))}
-          {products.length === 0 && <li>No products found.</li>}
-        </ul>
+      <section ref={sectionRefs.products} style={{ border: '1px solid #eee', background: '#fff', padding: 20, borderRadius: 8 }}>
+        <h2 style={{ fontSize: 22, marginBottom: 16, color: '#c2415c', borderBottom: '2px solid #f0f0f0', paddingBottom: 8 }}>
+          🌸 Products ({products.length})
+        </h2>
+        {products.length > 0 ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+            <thead>
+              <tr style={{ background: '#f8f5f5', borderBottom: '2px solid #e5e5e5' }}>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>Name</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>Category</th>
+                <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600 }}>Base Price</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600 }}>Option Groups</th>
+                {canManage && <th style={{ padding: '12px', textAlign: 'center', fontWeight: 600, width: 100 }}>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product, index) => (
+                <tr key={product.id} style={{ borderBottom: '1px solid #f0f0f0', background: index % 2 === 0 ? '#fff' : '#fafafa' }}>
+                  <td style={{ padding: '12px', fontWeight: 600 }}>{product.name}</td>
+                  <td style={{ padding: '12px', color: '#666' }}>{product.category?.name ?? 'Unassigned'}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#c2415c' }}>
+                    {product.basePrice.toFixed(2)} บาท
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <span style={{ 
+                      background: product.optionGroups.length > 0 ? '#e8f5e9' : '#f5f5f5',
+                      color: product.optionGroups.length > 0 ? '#2f855a' : '#999',
+                      padding: '4px 12px',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 600
+                    }}>
+                      {product.optionGroups.length}
+                    </span>
+                  </td>
+                  {canManage && (
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Delete product "${product.name}"?`)) {
+                            try {
+                              await deleteProduct(product.id, authToken);
+                              await loadCatalog();
+                            } catch (err) {
+                              alert('Failed to delete product');
+                            }
+                          }
+                        }}
+                        style={{
+                          background: '#dc2626',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '4px 12px',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 12
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: '#999', fontStyle: 'italic', marginBottom: 16 }}>No products yet. Create your first one below.</p>
+        )}
         <form onSubmit={handleCreateProduct}>
           <fieldset
             disabled={disableCatalogActions}
@@ -351,17 +456,6 @@ export const AdminCatalogPage = () => {
                 ))}
               </select>
             </label>
-            <label style={{ fontSize: 14, display: 'flex', flexDirection: 'column' }}>
-              Storefront
-              <select
-                value={productForm.storeKey}
-                onChange={(event) => setProductForm((current) => ({ ...current, storeKey: event.target.value as StoreKey }))}
-                style={{ marginTop: 4, padding: '6px 8px' }}
-              >
-                <option value="flagship">Flagship boutique</option>
-                <option value="weekend-market">Weekend market stall</option>
-              </select>
-            </label>
             <label style={{ fontSize: 14, gridColumn: '1 / -1', display: 'flex', flexDirection: 'column' }}>
               Description
               <textarea
@@ -393,22 +487,97 @@ export const AdminCatalogPage = () => {
         )}
       </section>
 
-      <section ref={sectionRefs['option-groups']} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Option groups</h2>
-        {products.map((product) => (
-          <div key={product.id} style={{ marginBottom: 12 }}>
-            <h3 style={{ marginBottom: 4 }}>{product.name}</h3>
-            <ul style={{ paddingLeft: 16 }}>
-              {product.optionGroups.map((group) => (
-                <li key={group.id}>
-                  <strong>{group.name}</strong> – {group.isRequired ? 'Required' : 'Optional'} (min {group.minSelect}, max {group.maxSelect || '∞'})
-                </li>
-              ))}
-              {product.optionGroups.length === 0 && <li>No option groups yet.</li>}
-            </ul>
-          </div>
-        ))}
-        {products.length === 0 && <p>No products available yet.</p>}
+      <section ref={sectionRefs['option-groups']} style={{ border: '1px solid #eee', background: '#fff', padding: 20, borderRadius: 8 }}>
+        <h2 style={{ fontSize: 22, marginBottom: 16, color: '#c2415c', borderBottom: '2px solid #f0f0f0', paddingBottom: 8 }}>
+          🎛️ Option Groups
+        </h2>
+        {products.length > 0 ? (
+          products.map((product) => (
+            <div key={product.id} style={{ marginBottom: 20, padding: 16, background: '#fafafa', borderRadius: 6, border: '1px solid #e5e5e5' }}>
+              <h3 style={{ marginBottom: 12, fontSize: 16, color: '#c2415c', fontWeight: 600 }}>
+                🌸 {product.name}
+              </h3>
+              {product.optionGroups.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#fff', borderBottom: '1px solid #e5e5e5' }}>
+                      <th style={{ padding: '8px', textAlign: 'left', fontSize: 13, fontWeight: 600 }}>Group Name</th>
+                      <th style={{ padding: '8px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>Required</th>
+                      <th style={{ padding: '8px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>Min</th>
+                      <th style={{ padding: '8px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>Max</th>
+                      <th style={{ padding: '8px', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>Options</th>
+                      {canManage && <th style={{ padding: '8px', textAlign: 'center', fontSize: 13, fontWeight: 600, width: 80 }}>Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {product.optionGroups.map((group) => (
+                      <tr key={group.id} style={{ background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '8px', fontWeight: 600 }}>{group.name}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <span style={{ 
+                            background: group.isRequired ? '#fff5f8' : '#f5f5f5',
+                            color: group.isRequired ? '#c2415c' : '#999',
+                            padding: '2px 8px',
+                            borderRadius: 4,
+                            fontSize: 11,
+                            fontWeight: 600
+                          }}>
+                            {group.isRequired ? 'YES' : 'NO'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>{group.minSelect}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>{group.maxSelect || '∞'}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <span style={{ 
+                            background: '#e8f5e9',
+                            color: '#2f855a',
+                            padding: '2px 8px',
+                            borderRadius: 12,
+                            fontSize: 12,
+                            fontWeight: 600
+                          }}>
+                            {group.options.length}
+                          </span>
+                        </td>
+                        {canManage && (
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Delete option group "${group.name}"?`)) {
+                                  try {
+                                    await deleteOptionGroup(group.id, authToken);
+                                    await loadCatalog();
+                                  } catch (err) {
+                                    alert('Failed to delete option group');
+                                  }
+                                }
+                              }}
+                              style={{
+                                background: '#dc2626',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '3px 8px',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontSize: 11
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ color: '#999', fontSize: 13, fontStyle: 'italic', margin: 0 }}>No option groups yet</p>
+              )}
+            </div>
+          ))
+        ) : (
+          <p style={{ color: '#999', fontStyle: 'italic', marginBottom: 16 }}>No products available yet.</p>
+        )}
         <form onSubmit={handleCreateOptionGroup}>
           <fieldset
             disabled={disableCatalogActions}
@@ -490,28 +659,87 @@ export const AdminCatalogPage = () => {
         )}
       </section>
 
-      <section ref={sectionRefs.options} style={{ border: '1px solid #eee', background: '#fff', padding: 16 }}>
-        <h2 style={{ fontSize: 22, marginBottom: 8, color: '#c2415c' }}>Options</h2>
-        {products.map((product) => (
-          <div key={product.id} style={{ marginBottom: 12 }}>
-            <h3 style={{ marginBottom: 4 }}>{product.name}</h3>
-            {product.optionGroups.map((group) => (
-              <div key={group.id} style={{ marginBottom: 8, paddingLeft: 16 }}>
-                <h4 style={{ marginBottom: 4 }}>{group.name}</h4>
-                <ul style={{ paddingLeft: 16 }}>
-                  {group.options.map((option) => (
-                    <li key={option.id}>
-                      <strong>{option.name}</strong> – ${option.priceModifier.toFixed(2)}
-                    </li>
-                  ))}
-                  {group.options.length === 0 && <li>No options yet.</li>}
-                </ul>
-              </div>
-            ))}
-            {product.optionGroups.length === 0 && <p style={{ paddingLeft: 16 }}>No option groups available.</p>}
-          </div>
-        ))}
-        {products.length === 0 && <p>No products available yet.</p>}
+      <section ref={sectionRefs.options} style={{ border: '1px solid #eee', background: '#fff', padding: 20, borderRadius: 8 }}>
+        <h2 style={{ fontSize: 22, marginBottom: 16, color: '#c2415c', borderBottom: '2px solid #f0f0f0', paddingBottom: 8 }}>
+          ⚙️ Options
+        </h2>
+        {products.length > 0 ? (
+          products.map((product) => (
+            <div key={product.id} style={{ marginBottom: 20, padding: 16, background: '#fafafa', borderRadius: 6, border: '1px solid #e5e5e5' }}>
+              <h3 style={{ marginBottom: 12, fontSize: 16, color: '#c2415c', fontWeight: 600 }}>
+                🌸 {product.name}
+              </h3>
+              {product.optionGroups.length > 0 ? (
+                product.optionGroups.map((group) => (
+                  <div key={group.id} style={{ marginBottom: 16, padding: 12, background: '#fff', borderRadius: 4, border: '1px solid #e5e5e5' }}>
+                    <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#555' }}>
+                      📋 {group.name}
+                    </h4>
+                    {group.options.length > 0 ? (
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ background: '#f8f5f5', borderBottom: '1px solid #e5e5e5' }}>
+                            <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: 12, fontWeight: 600 }}>Option Name</th>
+                            <th style={{ padding: '6px 8px', textAlign: 'right', fontSize: 12, fontWeight: 600 }}>Price Modifier</th>
+                            {canManage && <th style={{ padding: '6px 8px', textAlign: 'center', fontSize: 12, fontWeight: 600, width: 80 }}>Actions</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.options.map((option) => (
+                            <tr key={option.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                              <td style={{ padding: '6px 8px', fontSize: 13 }}>{option.name}</td>
+                              <td style={{ 
+                                padding: '6px 8px', 
+                                textAlign: 'right', 
+                                fontWeight: 600,
+                                color: option.priceModifier > 0 ? '#c2415c' : option.priceModifier < 0 ? '#2f855a' : '#999'
+                              }}>
+                                {option.priceModifier > 0 ? '+' : ''}{option.priceModifier.toFixed(2)} บาท
+                              </td>
+                              {canManage && (
+                                <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm(`Delete option "${option.name}"?`)) {
+                                        try {
+                                          await deleteOption(option.id, authToken);
+                                          await loadCatalog();
+                                        } catch (err) {
+                                          alert('Failed to delete option');
+                                        }
+                                      }
+                                    }}
+                                    style={{
+                                      background: '#dc2626',
+                                      color: '#fff',
+                                      border: 'none',
+                                      padding: '2px 8px',
+                                      borderRadius: 4,
+                                      cursor: 'pointer',
+                                      fontSize: 11
+                                    }}
+                                  >
+                                    Delete
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p style={{ color: '#999', fontSize: 12, fontStyle: 'italic', margin: 0 }}>No options yet</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: '#999', fontSize: 13, fontStyle: 'italic', margin: 0 }}>No option groups available</p>
+              )}
+            </div>
+          ))
+        ) : (
+          <p style={{ color: '#999', fontStyle: 'italic', marginBottom: 16 }}>No products available yet.</p>
+        )}
         <form onSubmit={handleCreateOption}>
           <fieldset
             disabled={disableCatalogActions}

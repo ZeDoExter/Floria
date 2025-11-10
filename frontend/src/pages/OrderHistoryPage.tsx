@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders, ORDER_STATUS_OPTIONS, updateOrderStatus } from '../api/orders';
-import type { OrderResponse, OrderStatus, StoreKey } from '../api/orders';
+import type { OrderResponse, OrderStatus } from '../api/orders';
 import { canReviewCustomerOrders } from '../utils/auth';
 
 export const OrderHistoryPage = () => {
@@ -13,10 +13,7 @@ export const OrderHistoryPage = () => {
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const isOwner = user ? canReviewCustomerOrders(user.role) : false;
 
-  const storeLabels: Record<StoreKey, string> = {
-    flagship: 'Flagship boutique',
-    'weekend-market': 'Weekend market stall'
-  };
+
 
   const statusLabels: Record<OrderStatus, string> = {
     PENDING: 'Pending',
@@ -127,11 +124,7 @@ export const OrderHistoryPage = () => {
                 )}
                 <span style={{ fontSize: 18, fontWeight: 600, color: '#c2415c' }}>${order.totalAmount.toFixed(2)}</span>
               </div>
-              {isOwner && (
-                <p style={{ marginTop: 8, fontSize: 13, color: '#555' }}>
-                  Storefront: {storeLabels[order.storeKey] ?? 'Flagship boutique'}
-                </p>
-              )}
+
             </article>
           ))
         )}

@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const referrerPolicy = configService.get('REFERRER_POLICY') || 'no-referrer-when-downgrade';
   app.enableCors({ origin: configService.get('CORS_ORIGIN') || '*', credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({

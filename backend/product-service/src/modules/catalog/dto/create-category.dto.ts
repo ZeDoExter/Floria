@@ -8,4 +8,5 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   description?: string;
+  // ownerId จะถูกเติมจาก JWT token ของ user อัตโนมัติ
 }
