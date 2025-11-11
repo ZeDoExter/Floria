@@ -66,6 +66,13 @@ export class ProxyService {
       if (context.user.role) {
         headers['x-user-role'] = context.user.role;
       }
+      
+      // Debug logging for PATCH requests to orders
+      if (method === 'patch' && path.includes('/orders/') && path.includes('/status')) {
+        console.log('=== Gateway Proxy Debug ===');
+        console.log('User:', context.user);
+        console.log('Headers being sent:', headers);
+      }
     }
 
     const response = await this.http.axiosRef.request<T>({

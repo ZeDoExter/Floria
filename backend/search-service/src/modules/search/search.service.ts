@@ -18,6 +18,9 @@ type SearchProductResult = {
   description: string | null;
   basePrice: number;
   category: string | null;
+  imageUrl: string | null;
+  categoryId: string;
+  ownerId: string;
 };
 
 type SearchResponse = {
@@ -32,26 +35,32 @@ export class SearchService {
   ) {}
 
   async searchProducts(query: string): Promise<SearchResponse> {
-    if (!query) {
+    if (!query || !query.trim()) {
       return { results: [] };
     }
 
-    const products = await this.productRepository.find({
-      where: [
-        { name: ILike(`%${query}%`) },
-        { description: ILike(`%${query}%`) }
-      ],
-      relations: ['category'],
-      take: 20
-    });
+    const searchTerm = query.trim();
+
+    // Use query builder to join with category
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('Category', 'category', 'category.id = product.categoryId')
+      .where('product.name ILIKE :search', { search: `%${searchTerm}%` })
+      .orWhere('product.description ILIKE :search', { search: `%${searchTerm}%` })
+      .orderBy('product.name', 'ASC')
+      .limit(20)
+      .getRawMany();
 
     return {
-      results: products.map((product) => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        basePrice: Number(product.basePrice),
-        category: product.categoryId ?? null
+      results: products.map((row) => ({
+        id: row.product_id,
+        name: row.product_name,
+        description: row.product_description,
+        basePrice: Number(row.product_basePrice),
+        category: row.category_name ?? null,
+        imageUrl: row.product_imageUrl ?? null,
+        categoryId: row.product_categoryId,
+        ownerId: row.product_ownerId
       }))
     };
   }

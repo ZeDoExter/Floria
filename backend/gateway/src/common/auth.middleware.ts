@@ -30,7 +30,8 @@ export class AuthMiddleware implements NestMiddleware<RequestWithUser, unknown> 
           sub: payload.sub,
           userId: payload.userId,
           email: payload.email,
-          displayName: payload.displayName
+          displayName: payload.displayName,
+          role: payload.role
         };
       } catch (error) {
         // eslint-disable-next-line no-console

@@ -2,7 +2,10 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProducts, ProductSummary } from '../api/products';
 import { fetchUserProfile } from '../api/users';
+import { searchProducts, SearchProductResult } from '../api/search';
 import { PackageIcon } from '../components/icons/PackageIcon';
+import { SearchIcon } from '../components/icons/SearchIcon';
+import { XMarkIcon } from '../components/icons/XMarkIcon';
 
 export const HomePage = () => {
   const [products, setProducts] = useState<ProductSummary[]>([]);
@@ -11,10 +14,13 @@ export const HomePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [location, setLocation] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchProductResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<number | null>(null);
 
   const ITEMS_PER_PAGE = 12;
 
@@ -99,16 +105,48 @@ export const HomePage = () => {
     };
   }, [loadMore, hasMore, isLoadingMore]);
 
-  const handleSearch = () => {
-    // Search functionality - location value is kept in state
-    console.log('Searching for location:', location);
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchProducts(searchQuery);
+        setSearchResults(results);
+      } catch (err) {
+        console.error('Search error:', err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-          {/* Left side - Text */}
+        <div className="space-y-6">
+          {/* Text */}
           <div className="space-y-4">
             <h1 className="text-4xl sm:text-5xl font-light italic text-foreground">
               All your favorite flower shops in one place.
@@ -117,6 +155,72 @@ export const HomePage = () => {
               Discover curated flower boutiques that turn moments into memories.
             </p>
           </div>
+
+          {/* Search Bar */}
+          <div className="max-w-2xl relative">
+            <div className="relative">
+              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search for flowers, bouquets, arrangements..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-12 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Clear search"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Results Dropdown */}
+            {searchQuery && (
+              <div className="absolute z-10 mt-2 w-full bg-card border border-border rounded-xl shadow-lg max-h-96 overflow-y-auto">
+                {isSearching ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Searching...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="py-2">
+                    {searchResults.map((result) => (
+                      <Link
+                        key={result.id}
+                        to={`/products/${result.id}`}
+                        className="block px-4 py-3 hover:bg-muted transition-colors"
+                        onClick={handleClearSearch}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-foreground truncate">
+                              {result.name}
+                            </h3>
+                            {result.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                                {result.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-sm font-medium text-primary whitespace-nowrap">
+                            ${result.basePrice.toFixed(2)}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-muted-foreground">
+                    No products found for "{searchQuery}"
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </section>
 
       {/* Products Section */}
