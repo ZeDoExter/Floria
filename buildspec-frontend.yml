@@ -5,7 +5,7 @@ phases:
     commands:
       - echo Installing dependencies...
       - cd frontend
-      - npm ci
+      - npm install
   
   build:
     commands:

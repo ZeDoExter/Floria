@@ -417,6 +417,7 @@ REM Gateway
 docker build -t YOUR-ACCOUNT-ID.dkr.ecr.ap-southeast-1.amazonaws.com/floratailor/gateway:latest ./backend/gateway
 docker push YOUR-ACCOUNT-ID.dkr.ecr.ap-southeast-1.amazonaws.com/floratailor/gateway:latest
 
+
 REM Product Service
 docker build -t YOUR-ACCOUNT-ID.dkr.ecr.ap-southeast-1.amazonaws.com/floratailor/product-service:latest ./backend/product-service
 docker push YOUR-ACCOUNT-ID.dkr.ecr.ap-southeast-1.amazonaws.com/floratailor/product-service:latest
@@ -445,11 +446,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\push-initial-images.ps1
 ### 8.5 Update ECS Services
 
 ```cmd
-aws ecs update-service --cluster floratailor-cluster --service floratailor-gateway --force-new-deployment
-aws ecs update-service --cluster floratailor-cluster --service floratailor-product-service --force-new-deployment
-aws ecs update-service --cluster floratailor-cluster --service floratailor-cart-service --force-new-deployment
-aws ecs update-service --cluster floratailor-cluster --service floratailor-order-service --force-new-deployment
-aws ecs update-service --cluster floratailor-cluster --service floratailor-search-service --force-new-deployment
+aws ecs update-service --cluster floratailor-cluster --service floratailor-gateway --force-new-deployment --no-cli-pager
+aws ecs update-service --cluster floratailor-cluster --service floratailor-product-service --force-new-deployment --no-cli-pager
+aws ecs update-service --cluster floratailor-cluster --service floratailor-cart-service --force-new-deployment --no-cli-pager
+aws ecs update-service --cluster floratailor-cluster --service floratailor-order-service --force-new-deployment --no-cli-pager
+aws ecs update-service --cluster floratailor-cluster --service floratailor-search-service --force-new-deployment --no-cli-pager
 ```
 
 ### 8.6 ตรวจสอบ ECS
@@ -569,7 +570,18 @@ curl http://YOUR-ALB-DNS/health
 ```
 https://YOUR-CLOUDFRONT-DOMAIN
 ```
-
+<!-- email
+: 
+"dfsafds@dfa.com"
+firstName
+: 
+"fdsafd"
+lastName
+: 
+"fdsafdsa"
+password
+: 
+"fdsafdsa" -->
 ### 10.4 ทดสอบ Features
 
 1. **Register**: สร้าง account ใหม่
@@ -588,9 +600,78 @@ aws logs tail /ecs/floratailor/gateway --follow
 
 ---
 
+## ขั้นตอนที่ 11: ตั้งค่า GitHub Actions (Optional)
+
+GitHub Actions จะ auto deploy ทุกครั้งที่ push code
+
+### 11.1 เพิ่ม Secrets ใน GitHub
+
+1. ไปที่ GitHub repo → **Settings** → **Secrets and variables** → **Actions**
+2. คลิก **New repository secret**
+3. เพิ่ม secrets ต่อไปนี้:
+
+**Secrets ที่ต้องเพิ่ม:**
+
+```
+AWS_ACCESS_KEY_ID=AKIAXXXXXXXXXXXXXXXX
+AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+VITE_API_BASE_URL=http://floratailor-alb-1665932385.ap-southeast-1.elb.amazonaws.com
+S3_BUCKET=floratailor-frontend-225989373961
+CLOUDFRONT_DISTRIBUTION_ID=E1234567890ABC
+```
+
+**หา CloudFront Distribution ID:**
+```cmd
+aws cloudfront list-distributions --query "DistributionList.Items[?DomainName=='d2ynxnybvxfyco.cloudfront.net'].Id" --output text
+```
+
+### 11.2 ตรวจสอบไฟล์ Workflow
+
+ไฟล์ `.github/workflows/deploy.yml` มีอยู่แล้ว
+
+### 11.3 Commit และ Push
+
+```cmd
+git add .
+git commit -m "Add GitHub Actions"
+git push origin main
+```
+
+### 11.4 ตรวจสอบ
+
+1. ไปที่ GitHub repo → แท็บ **Actions**
+2. จะเห็น workflow "Deploy to AWS" กำลังรัน
+3. คลิกเข้าไปดู logs
+
+### 11.5 ทดสอบ Auto Deploy
+
+แก้ไขโค้ด แล้ว push:
+
+```cmd
+git add .
+git commit -m "Test auto deploy"
+git push origin main
+```
+
+GitHub Actions จะ auto deploy ให้!
+
+---
+
 ## การ Update Code
 
-### วิธีที่ 1: ใช้ CodePipeline (แนะนำ)
+### วิธีที่ 1: ใช้ GitHub Actions (แนะนำ)
+
+```cmd
+git add .
+git commit -m "Update feature"
+git push origin main
+```
+
+GitHub Actions จะ deploy อัตโนมัติ
+
+ดู progress: https://github.com/YOUR-USERNAME/flora-tailor/actions
+
+### วิธีที่ 2: ใช้ CodePipeline
 
 ```cmd
 git add .
