@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Relation } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Relation } from 'typeorm';
+import { Category } from './category.entity.js';
 
 @Entity()
 export class Product {
@@ -19,6 +20,10 @@ export class Product {
 
   @Column({ type: 'uuid' })
   categoryId!: string;
+
+  @ManyToOne(() => Category)
+  @JoinColumn({ name: 'categoryId' })
+  category!: Relation<Category>;
 
   @Column({ type: 'uuid' })
   ownerId!: string;

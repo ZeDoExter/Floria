@@ -60,6 +60,7 @@ services:
       POSTGRES_PASSWORD: flora
       POSTGRES_DB: floratailor
       NODE_ENV: development
+      CORS_ORIGIN: http://localhost:4173
     depends_on:
       - postgres
     networks:

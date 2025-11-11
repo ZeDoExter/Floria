@@ -25,7 +25,6 @@ import { Option } from '../../entities/option.entity.js';
 import { CartItem } from '../../entities/cart-item.entity.js';
 import { Cart } from '../../entities/cart.entity.js';
 import { User } from '../../entities/user.entity.js';
-import { getUserRole } from './roles.js';
 
 type OrderWithUser = Order & { user?: User };
 
@@ -73,7 +72,15 @@ export class OrdersService {
         status: order.status,
         createdAt: order.createdAt,
         notes: order.notes,
-        deliveryDate: order.deliveryDate
+        deliveryDate: order.deliveryDate,
+        items: order.items?.map((item) => ({
+          id: item.id,
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: Number(item.unitPrice),
+          optionSnapshot: item.optionSnapshot
+        })) || []
       }))
     };
   }
@@ -251,38 +258,54 @@ export class OrdersService {
     };
   }
 
-  async updateOrderStatus(userEmail: string | undefined, orderId: string, status: OrderStatus): Promise<void> {
-    if (!userEmail) {
-      throw new UnauthorizedException('User authentication required');
+  async updateOrderStatus(
+    userId: string | undefined, 
+    userEmail: string | undefined, 
+    userRole: string | undefined,
+    orderId: string, 
+    status: OrderStatus
+  ): Promise<{ id: string; status: OrderStatus }> {
+    try {
+      console.log('=== Update Order Status Debug ===');
+      console.log('userId:', userId);
+      console.log('userEmail:', userEmail);
+      console.log('userRole:', userRole);
+      console.log('orderId:', orderId);
+      
+      if (!userId || !userEmail) {
+        throw new UnauthorizedException('User authentication required');
+      }
+
+      // Check if order exists
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId }
+      });
+
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      console.log('order.userId:', order.userId);
+      console.log('userRole:', userRole);
+      
+
+      const isOrderOwner = order.userId === userId;
+      const isShopOwner = userRole === 'owner';
+
+      console.log('isOrderOwner:', isOrderOwner);
+      console.log('isShopOwner:', isShopOwner);
+
+      // Update the order status
+      await this.orderRepository.update(orderId, { status });
+
+      return {
+        id: orderId,
+        status
+      };
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
     }
-
-    const user = await this.userRepository.findOne({
-      where: { email: userEmail }
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Check if user has permission to update order status (e.g., admin or order owner)
-    // For now, allow if user is admin or the order belongs to them
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId },
-      relations: ['user']
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    // Allow update if user is admin or owns the order
-    const userRole = getUserRole(user.email);
-    if (userRole !== 'admin' && order.userId !== user.id) {
-      throw new UnauthorizedException('You do not have permission to update this order status');
-    }
-
-    // Update the order status
-    await this.orderRepository.update(orderId, { status });
   }
 
 }
