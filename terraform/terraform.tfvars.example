@@ -1,0 +1,19 @@
+# AWS Configuration
+aws_region   = "ap-southeast-1"
+project_name = "floratailor"
+environment  = "prod"
+
+# Database Configuration
+db_username = "flora"
+db_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# JWT Secret
+jwt_secret = "CHANGE_ME_STRONG_JWT_SECRET"
+
+# GitHub Configuration
+github_repo   = "your-username/your-repo"
+github_branch = "main"
+github_token  = "ghp_YOUR_GITHUB_TOKEN"
+
+# Optional: Custom Domain
+# domain_name = "yourdomain.com"

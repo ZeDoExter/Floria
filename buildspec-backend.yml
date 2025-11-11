@@ -1,0 +1,74 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  
+  build:
+    commands:
+      - echo Build started on `date`
+      
+      # Build Gateway
+      - echo Building Gateway service...
+      - docker build -t $ECR_GATEWAY_REPO:latest -t $ECR_GATEWAY_REPO:$IMAGE_TAG ./backend/gateway
+      
+      # Build Product Service
+      - echo Building Product service...
+      - docker build -t $ECR_PRODUCT_REPO:latest -t $ECR_PRODUCT_REPO:$IMAGE_TAG ./backend/product-service
+      
+      # Build Cart Service
+      - echo Building Cart service...
+      - docker build -t $ECR_CART_REPO:latest -t $ECR_CART_REPO:$IMAGE_TAG ./backend/cart-service
+      
+      # Build Order Service
+      - echo Building Order service...
+      - docker build -t $ECR_ORDER_REPO:latest -t $ECR_ORDER_REPO:$IMAGE_TAG ./backend/order-service
+      
+      # Build Search Service
+      - echo Building Search service...
+      - docker build -t $ECR_SEARCH_REPO:latest -t $ECR_SEARCH_REPO:$IMAGE_TAG ./backend/search-service
+  
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      
+      # Push Gateway
+      - echo Pushing Gateway images...
+      - docker push $ECR_GATEWAY_REPO:latest
+      - docker push $ECR_GATEWAY_REPO:$IMAGE_TAG
+      
+      # Push Product Service
+      - echo Pushing Product service images...
+      - docker push $ECR_PRODUCT_REPO:latest
+      - docker push $ECR_PRODUCT_REPO:$IMAGE_TAG
+      
+      # Push Cart Service
+      - echo Pushing Cart service images...
+      - docker push $ECR_CART_REPO:latest
+      - docker push $ECR_CART_REPO:$IMAGE_TAG
+      
+      # Push Order Service
+      - echo Pushing Order service images...
+      - docker push $ECR_ORDER_REPO:latest
+      - docker push $ECR_ORDER_REPO:$IMAGE_TAG
+      
+      # Push Search Service
+      - echo Pushing Search service images...
+      - docker push $ECR_SEARCH_REPO:latest
+      - docker push $ECR_SEARCH_REPO:$IMAGE_TAG
+      
+      # Update ECS Services
+      - echo Updating ECS services...
+      - aws ecs update-service --cluster $ECS_CLUSTER --service floratailor-gateway --force-new-deployment
+      - aws ecs update-service --cluster $ECS_CLUSTER --service floratailor-product-service --force-new-deployment
+      - aws ecs update-service --cluster $ECS_CLUSTER --service floratailor-cart-service --force-new-deployment
+      - aws ecs update-service --cluster $ECS_CLUSTER --service floratailor-order-service --force-new-deployment
+      - aws ecs update-service --cluster $ECS_CLUSTER --service floratailor-search-service --force-new-deployment
+
+artifacts:
+  files:
+    - '**/*'
