@@ -53,11 +53,22 @@ resource "aws_iam_role_policy" "codebuild" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:DeleteObject"
         ]
         Resource = [
           "${aws_s3_bucket.codepipeline_artifacts.arn}/*",
           "${aws_s3_bucket.frontend.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.codepipeline_artifacts.arn,
+          aws_s3_bucket.frontend.arn
         ]
       },
       {
