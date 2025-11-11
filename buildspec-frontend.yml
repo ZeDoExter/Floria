@@ -5,7 +5,8 @@ phases:
     commands:
       - echo Installing dependencies...
       - cd frontend
-      - npm ci || npm install
+      - rm -rf node_modules package-lock.json
+      - npm install
   
   build:
     commands:
