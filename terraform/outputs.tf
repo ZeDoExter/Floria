@@ -24,8 +24,3 @@ output "rds_endpoint" {
   value       = aws_db_instance.main.endpoint
   sensitive   = true
 }
-
-output "codepipeline_name" {
-  description = "CodePipeline name"
-  value       = aws_codepipeline.main.name
-}
