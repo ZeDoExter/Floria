@@ -72,8 +72,8 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
         "secretsmanager:GetSecretValue"
       ]
       Resource = [
-        aws_secretsmanager_secret.db_password.arn,
-        aws_secretsmanager_secret.jwt_secret.arn
+        var.db_password_secret_arn,
+        var.jwt_secret_arn
       ]
     }]
   })
@@ -90,8 +90,8 @@ resource "aws_ecs_task_definition" "gateway" {
 
   container_definitions = jsonencode([{
     name  = "gateway"
-    image = "${aws_ecr_repository.gateway.repository_url}:latest"
-    
+    image = "${var.gateway_repository_url}:latest"
+
     portMappings = [{
       containerPort = 3000
       protocol      = "tcp"
@@ -100,7 +100,7 @@ resource "aws_ecs_task_definition" "gateway" {
     environment = [
       { name = "PORT", value = "3000" },
       { name = "NODE_ENV", value = "production" },
-      { name = "POSTGRES_HOST", value = aws_db_instance.main.address },
+      { name = "POSTGRES_HOST", value = var.db_address },
       { name = "POSTGRES_PORT", value = "5432" },
       { name = "POSTGRES_USER", value = var.db_username },
       { name = "POSTGRES_DB", value = "floratailor" },
@@ -108,12 +108,12 @@ resource "aws_ecs_task_definition" "gateway" {
       { name = "CART_SERVICE_URL", value = "http://cart-service.local:3002" },
       { name = "ORDER_SERVICE_URL", value = "http://order-service.local:3003" },
       { name = "SEARCH_SERVICE_URL", value = "http://search-service.local:3004" },
-      { name = "CORS_ORIGIN", value = "https://${aws_cloudfront_distribution.frontend.domain_name}" }
+      { name = "CORS_ORIGIN", value = "https://${var.cloudfront_domain_name}" }
     ]
 
     secrets = [
-      { name = "POSTGRES_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn },
-      { name = "JWT_SECRET", valueFrom = aws_secretsmanager_secret.jwt_secret.arn }
+      { name = "POSTGRES_PASSWORD", valueFrom = var.db_password_secret_arn },
+      { name = "JWT_SECRET", valueFrom = var.jwt_secret_arn }
     ]
 
     logConfiguration = {
@@ -137,8 +137,8 @@ resource "aws_ecs_task_definition" "product_service" {
 
   container_definitions = jsonencode([{
     name  = "product-service"
-    image = "${aws_ecr_repository.product_service.repository_url}:latest"
-    
+    image = "${var.product_service_repository_url}:latest"
+
     portMappings = [{
       containerPort = 3001
       protocol      = "tcp"
@@ -147,14 +147,14 @@ resource "aws_ecs_task_definition" "product_service" {
     environment = [
       { name = "PORT", value = "3001" },
       { name = "NODE_ENV", value = "production" },
-      { name = "POSTGRES_HOST", value = aws_db_instance.main.address },
+      { name = "POSTGRES_HOST", value = var.db_address },
       { name = "POSTGRES_PORT", value = "5432" },
       { name = "POSTGRES_USER", value = var.db_username },
       { name = "POSTGRES_DB", value = "floratailor" }
     ]
 
     secrets = [
-      { name = "POSTGRES_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn }
+      { name = "POSTGRES_PASSWORD", valueFrom = var.db_password_secret_arn }
     ]
 
     logConfiguration = {
@@ -178,8 +178,8 @@ resource "aws_ecs_task_definition" "cart_service" {
 
   container_definitions = jsonencode([{
     name  = "cart-service"
-    image = "${aws_ecr_repository.cart_service.repository_url}:latest"
-    
+    image = "${var.cart_service_repository_url}:latest"
+
     portMappings = [{
       containerPort = 3002
       protocol      = "tcp"
@@ -188,14 +188,14 @@ resource "aws_ecs_task_definition" "cart_service" {
     environment = [
       { name = "PORT", value = "3002" },
       { name = "NODE_ENV", value = "production" },
-      { name = "POSTGRES_HOST", value = aws_db_instance.main.address },
+      { name = "POSTGRES_HOST", value = var.db_address },
       { name = "POSTGRES_PORT", value = "5432" },
       { name = "POSTGRES_USER", value = var.db_username },
       { name = "POSTGRES_DB", value = "floratailor" }
     ]
 
     secrets = [
-      { name = "POSTGRES_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn }
+      { name = "POSTGRES_PASSWORD", valueFrom = var.db_password_secret_arn }
     ]
 
     logConfiguration = {
@@ -219,8 +219,8 @@ resource "aws_ecs_task_definition" "order_service" {
 
   container_definitions = jsonencode([{
     name  = "order-service"
-    image = "${aws_ecr_repository.order_service.repository_url}:latest"
-    
+    image = "${var.order_service_repository_url}:latest"
+
     portMappings = [{
       containerPort = 3003
       protocol      = "tcp"
@@ -229,14 +229,14 @@ resource "aws_ecs_task_definition" "order_service" {
     environment = [
       { name = "PORT", value = "3003" },
       { name = "NODE_ENV", value = "production" },
-      { name = "POSTGRES_HOST", value = aws_db_instance.main.address },
+      { name = "POSTGRES_HOST", value = var.db_address },
       { name = "POSTGRES_PORT", value = "5432" },
       { name = "POSTGRES_USER", value = var.db_username },
       { name = "POSTGRES_DB", value = "floratailor" }
     ]
 
     secrets = [
-      { name = "POSTGRES_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn }
+      { name = "POSTGRES_PASSWORD", valueFrom = var.db_password_secret_arn }
     ]
 
     logConfiguration = {
@@ -260,8 +260,8 @@ resource "aws_ecs_task_definition" "search_service" {
 
   container_definitions = jsonencode([{
     name  = "search-service"
-    image = "${aws_ecr_repository.search_service.repository_url}:latest"
-    
+    image = "${var.search_service_repository_url}:latest"
+
     portMappings = [{
       containerPort = 3004
       protocol      = "tcp"
@@ -270,14 +270,14 @@ resource "aws_ecs_task_definition" "search_service" {
     environment = [
       { name = "PORT", value = "3004" },
       { name = "NODE_ENV", value = "production" },
-      { name = "POSTGRES_HOST", value = aws_db_instance.main.address },
+      { name = "POSTGRES_HOST", value = var.db_address },
       { name = "POSTGRES_PORT", value = "5432" },
       { name = "POSTGRES_USER", value = var.db_username },
       { name = "POSTGRES_DB", value = "floratailor" }
     ]
 
     secrets = [
-      { name = "POSTGRES_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn }
+      { name = "POSTGRES_PASSWORD", valueFrom = var.db_password_secret_arn }
     ]
 
     logConfiguration = {
@@ -300,18 +300,16 @@ resource "aws_ecs_service" "gateway" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_sg_id]
     assign_public_ip = false
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.gateway.arn
+    target_group_arn = var.gateway_target_group_arn
     container_name   = "gateway"
     container_port   = 3000
   }
-
-  depends_on = [aws_lb_listener.http]
 }
 
 resource "aws_ecs_service" "product_service" {
@@ -322,8 +320,8 @@ resource "aws_ecs_service" "product_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_sg_id]
     assign_public_ip = false
   }
 
@@ -340,8 +338,8 @@ resource "aws_ecs_service" "cart_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_sg_id]
     assign_public_ip = false
   }
 
@@ -358,8 +356,8 @@ resource "aws_ecs_service" "order_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_sg_id]
     assign_public_ip = false
   }
 
@@ -376,8 +374,8 @@ resource "aws_ecs_service" "search_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.ecs_tasks.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_sg_id]
     assign_public_ip = false
   }
 
@@ -389,7 +387,7 @@ resource "aws_ecs_service" "search_service" {
 # Service Discovery
 resource "aws_service_discovery_private_dns_namespace" "main" {
   name = "local"
-  vpc  = aws_vpc.main.id
+  vpc  = var.vpc_id
 }
 
 resource "aws_service_discovery_service" "product_service" {
@@ -397,7 +395,7 @@ resource "aws_service_discovery_service" "product_service" {
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.main.id
-    
+
     dns_records {
       ttl  = 10
       type = "A"
@@ -414,7 +412,7 @@ resource "aws_service_discovery_service" "cart_service" {
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.main.id
-    
+
     dns_records {
       ttl  = 10
       type = "A"
@@ -431,7 +429,7 @@ resource "aws_service_discovery_service" "order_service" {
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.main.id
-    
+
     dns_records {
       ttl  = 10
       type = "A"
@@ -448,7 +446,7 @@ resource "aws_service_discovery_service" "search_service" {
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.main.id
-    
+
     dns_records {
       ttl  = 10
       type = "A"
