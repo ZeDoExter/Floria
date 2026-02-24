@@ -12,10 +12,10 @@ output "ecr_repositories" {
   description = "ECR repository URLs"
   value = {
     gateway         = aws_ecr_repository.gateway.repository_url
-    product_service = aws_ecr_repository.product_service.repository_url
+    INVENTORY_service = aws_ecr_repository.INVENTORY_service.repository_url
     cart_service    = aws_ecr_repository.cart_service.repository_url
     order_service   = aws_ecr_repository.order_service.repository_url
-    search_service  = aws_ecr_repository.search_service.repository_url
+    payment_service  = aws_ecr_repository.payment_service.repository_url
   }
 }
 

@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -17,7 +16,7 @@ async function bootstrap() {
     credentials: true,
     exposedHeaders: ['x-total-count'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-user-email', 'x-user-role']
   });
 
   app.useGlobalPipes(
@@ -27,19 +26,10 @@ async function bootstrap() {
     })
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('Floria API Gateway')
-    .setDescription('The API description for Floria e-commerce platform')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
-
-  const port = configService.get('PORT') || 3000;
+  const port = configService.get('PORT') || 3003;
   await app.listen(port);
   // eslint-disable-next-line no-console
-  console.log(`Gateway running on port ${port}`);
+  console.log(`Order service running on port ${port}`);
 }
 
 void bootstrap();

@@ -9,7 +9,7 @@ import {
   JoinColumn,
   Relation
 } from 'typeorm';
-import { Account } from './account.entity';
+import { Account } from './account.entity.js';
 
 @Entity()
 export class User {

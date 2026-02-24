@@ -13,8 +13,8 @@ resource "aws_ecr_repository" "gateway" {
   }
 }
 
-resource "aws_ecr_repository" "product_service" {
-  name                 = "${var.project_name}/product-service"
+resource "aws_ecr_repository" "INVENTORY_service" {
+  name                 = "${var.project_name}/INVENTORY-service"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -22,7 +22,7 @@ resource "aws_ecr_repository" "product_service" {
   }
 
   tags = {
-    Name        = "${var.project_name}-product-service"
+    Name        = "${var.project_name}-INVENTORY-service"
     Environment = var.environment
   }
 }
@@ -55,8 +55,8 @@ resource "aws_ecr_repository" "order_service" {
   }
 }
 
-resource "aws_ecr_repository" "search_service" {
-  name                 = "${var.project_name}/search-service"
+resource "aws_ecr_repository" "payment_service" {
+  name                 = "${var.project_name}/payment-service"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -64,7 +64,7 @@ resource "aws_ecr_repository" "search_service" {
   }
 
   tags = {
-    Name        = "${var.project_name}-search-service"
+    Name        = "${var.project_name}-payment-service"
     Environment = var.environment
   }
 }
@@ -73,10 +73,10 @@ resource "aws_ecr_repository" "search_service" {
 resource "aws_ecr_lifecycle_policy" "main" {
   for_each = {
     gateway         = aws_ecr_repository.gateway.name
-    product_service = aws_ecr_repository.product_service.name
+    INVENTORY_service = aws_ecr_repository.INVENTORY_service.name
     cart_service    = aws_ecr_repository.cart_service.name
     order_service   = aws_ecr_repository.order_service.name
-    search_service  = aws_ecr_repository.search_service.name
+    payment_service  = aws_ecr_repository.payment_service.name
   }
 
   repository = each.value

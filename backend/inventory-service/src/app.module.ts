@@ -2,16 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validate } from './env.validation.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrdersModule } from './modules/orders/orders.module.js';
-import { User } from './entities/user.entity';
+import { CatalogModule } from './modules/catalog/catalog.module.js';
+import { Category } from './entities/category.entity';
 import { Product } from './entities/product.entity';
 import { OptionGroup } from './entities/option-group.entity';
 import { Option } from './entities/option.entity';
-import { Order } from './entities/order.entity';
-import { OrderItem } from './entities/order-item.entity';
 import { HealthModule } from 'floria-shared';
-import { Cart } from './entities/cart.entity';
-import { CartItem } from './entities/cart-item.entity';
 
 @Module({
   imports: [
@@ -23,11 +19,12 @@ import { CartItem } from './entities/cart-item.entity';
       username: process.env.POSTGRES_USER ?? 'postgres',
       password: process.env.POSTGRES_PASSWORD ?? 'postgres',
       database: process.env.POSTGRES_DB ?? 'appdb',
-      entities: [User, Product, OptionGroup, Option, Order, OrderItem, Cart, CartItem],
+      entities: [Category, Product, OptionGroup, Option],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV !== 'production',
     }),
-    OrdersModule
+    CatalogModule,
+    HealthModule
   ]
 })
 export class AppModule { }

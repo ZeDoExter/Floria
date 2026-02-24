@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { validate } from './env.validation.js';
 import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
@@ -9,24 +10,22 @@ import { CartModule } from './modules/cart/cart.module.js';
 import { OrdersModule } from './modules/orders/orders.module.js';
 import { SearchModule } from './modules/search/search.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { PaymentModule } from './modules/payment/payment.module.js';
 import { AuthMiddleware } from './common/auth.middleware.js';
 import { ProxyModule } from './modules/proxy/proxy.module.js';
 import { Account } from './entities/account.entity.js';
 import { User } from './entities/user.entity.js';
+import { HealthModule } from 'floria-shared';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate }),
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.POSTGRES_HOST ?? 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
-      username: process.env.POSTGRES_USER ?? 'postgres',
-      password: process.env.POSTGRES_PASSWORD ?? 'postgres',
-      database: process.env.POSTGRES_DB ?? 'appdb',
+      type: 'sqlite',
+      database: ':memory:',
       entities: [Account, User],
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV !== 'production',
+      synchronize: true,
+      logging: false,
     }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -44,7 +43,9 @@ import { User } from './entities/user.entity.js';
     CartModule,
     OrdersModule,
     SearchModule,
-    UsersModule
+    UsersModule,
+    PaymentModule,
+    HealthModule
   ],
   providers: [AuthMiddleware]
 })

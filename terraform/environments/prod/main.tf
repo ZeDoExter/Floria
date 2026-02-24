@@ -74,10 +74,10 @@ module "compute" {
   private_subnet_ids             = module.networking.private_subnet_ids
   ecs_sg_id                      = module.security.ecs_sg_id
   gateway_repository_url         = module.ecr.gateway_repository_url
-  product_service_repository_url = module.ecr.product_service_repository_url
+  INVENTORY_service_repository_url = module.ecr.INVENTORY_service_repository_url
   cart_service_repository_url    = module.ecr.cart_service_repository_url
   order_service_repository_url   = module.ecr.order_service_repository_url
-  search_service_repository_url  = module.ecr.search_service_repository_url
+  payment_service_repository_url  = module.ecr.payment_service_repository_url
   gateway_target_group_arn       = module.loadbalancer.gateway_target_group_arn
   db_address                     = module.database.db_address
   db_password_secret_arn         = module.database.db_password_secret_arn

@@ -5,7 +5,7 @@ Terraform configuration สำหรับ deploy Flora Tailor e-commerce platfo
 ## Architecture
 
 ### AWS Services ที่ใช้:
-- **ECS Fargate**: รัน microservices (Gateway, Product, Cart, Order, Search)
+- **ECS Fargate**: รัน microservices (Gateway, INVENTORY, Cart, Order, payment)
 - **RDS PostgreSQL**: Database
 - **Application Load Balancer**: Load balancing สำหรับ backend
 - **ECR**: Docker image registry
