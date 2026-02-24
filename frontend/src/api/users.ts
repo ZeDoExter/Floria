@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { DefaultService } from './index';
 
 export type DirectoryUser = {
   email: string;
@@ -22,22 +22,20 @@ export type UserProfile = {
 };
 
 export const fetchDirectory = async (token: string) => {
-  const response = await apiClient.get<DirectoryResponse>('/admin/users', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await DefaultService.usersControllerList();
 
   const payload = response.data?.users;
   if (!Array.isArray(payload)) {
     return [] as DirectoryUser[];
   }
 
-  return payload.map((user) => ({
+  return payload.map((user: any) => ({
     ...user,
     capabilities: Array.isArray(user.capabilities) ? user.capabilities : []
   }));
 };
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
-  const response = await apiClient.get(`/users/${userId}`);
+  const response = await DefaultService.usersControllerGetUser(userId);
   return response.data;
 };

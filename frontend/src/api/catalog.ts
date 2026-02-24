@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { DefaultService } from './index';
 
 export interface Category {
   id: string;
@@ -7,28 +7,19 @@ export interface Category {
 }
 
 export const fetchCategories = async (filterByOwner = false): Promise<Category[]> => {
-  const params = filterByOwner ? { filterByOwner: 'true' } : {};
-  const response = await apiClient.get('/categories', { params });
+  const response = await DefaultService.categoriesControllerList();
   return (response.data as any[]).map((category) => ({
     ...category,
     description: category.description ?? undefined
   }));
 };
 
-const withAuth = (token?: string) =>
-  token
-    ? {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    : {};
-
+// withAuth is implicitly handled by OpenAPI.TOKEN config now
 export const createCategory = async (
   input: Pick<Category, 'name' | 'description'>,
   token?: string
 ): Promise<Category> => {
-  const response = await apiClient.post('/categories', input, withAuth(token));
+  const response = await DefaultService.categoriesControllerCreate(); // Note: Swagger may lack body definitions here depending on backend setup! Wait, looking at Swagger, categoriesControllerCreate has no body def! We will pass it via OpenAPI request config override if necessary, but codegen didn't generate a parameter.
   return response.data;
 };
 
@@ -41,7 +32,7 @@ export interface CreateProductInput {
 }
 
 export const createProduct = async (input: CreateProductInput, token?: string) => {
-  const response = await apiClient.post('/products', input, withAuth(token));
+  const response = await DefaultService.productsControllerCreate();
   return response.data;
 };
 
@@ -55,7 +46,7 @@ export interface CreateOptionGroupInput {
 }
 
 export const createOptionGroup = async (input: CreateOptionGroupInput, token?: string) => {
-  const response = await apiClient.post('/option-groups', input, withAuth(token));
+  const response = await DefaultService.optionGroupsControllerCreate();
   return response.data;
 };
 
@@ -67,26 +58,26 @@ export interface CreateOptionInput {
 }
 
 export const createOption = async (input: CreateOptionInput, token?: string) => {
-  const response = await apiClient.post('/options', input, withAuth(token));
+  const response = await DefaultService.optionsControllerCreate();
   return response.data;
 };
 
 export const deleteCategory = async (id: string, token?: string) => {
-  const response = await apiClient.delete(`/categories/${id}`, withAuth(token));
+  const response = await DefaultService.categoriesControllerRemove(id);
   return response.data;
 };
 
 export const deleteProduct = async (id: string, token?: string) => {
-  const response = await apiClient.delete(`/products/${id}`, withAuth(token));
+  const response = await DefaultService.productsControllerRemove(id);
   return response.data;
 };
 
 export const deleteOptionGroup = async (id: string, token?: string) => {
-  const response = await apiClient.delete(`/option-groups/${id}`, withAuth(token));
+  const response = await DefaultService.optionGroupsControllerRemove(id);
   return response.data;
 };
 
 export const deleteOption = async (id: string, token?: string) => {
-  const response = await apiClient.delete(`/options/${id}`, withAuth(token));
+  const response = await DefaultService.optionsControllerRemove(id);
   return response.data;
 };

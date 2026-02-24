@@ -20,12 +20,19 @@ import { HealthModule } from 'floria-shared';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
-    TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: ':memory:',
-      entities: [Account, User],
-      synchronize: true,
-      logging: false,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
+        entities: [User, Account],
+        synchronize: true, // Auto-sync schema in dev
+      }),
+      inject: [ConfigService],
     }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

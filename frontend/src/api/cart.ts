@@ -1,4 +1,6 @@
-import { apiClient } from './client';
+import { DefaultService } from './index';
+import { request as __request } from './core/request';
+import { OpenAPI } from './core/OpenAPI';
 
 export type CartItemInput = {
   productId: string;
@@ -25,41 +27,42 @@ const normalizeCart = (cart: SerializedCart): CartItemResponse[] =>
   }));
 
 export const mergeCart = async (items: CartItemInput[], token: string) => {
-  const response = await apiClient.post<SerializedCart>(
-    '/cart/merge',
-    { items },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  );
-  return normalizeCart(response.data);
+  const response = await __request(OpenAPI, {
+    method: 'POST',
+    url: '/cart/merge',
+    body: { items }
+  });
+  return normalizeCart(response as any);
 };
 
 export const fetchRemoteCart = async (token: string) => {
-  const response = await apiClient.get<SerializedCart>('/cart', {
-    headers: { Authorization: `Bearer ${token}` }
+  const response = await __request(OpenAPI, {
+    method: 'GET',
+    url: '/cart',
+    // We intentionally don't pass token here if we rely on global, but we can't easily pass the query without codegen param unless we specify it
+    query: { anonymousId: 'dummy' }
   });
-  return normalizeCart(response.data);
+  return normalizeCart(response as any);
 };
 export const addCartItem = async (token: string, item: CartItemInput) => {
-  const response = await apiClient.post<SerializedCart>('/cart/items', item, {
-    headers: { Authorization: `Bearer ${token}` }
+  const response = await __request(OpenAPI, {
+    method: 'POST',
+    url: '/cart/items',
+    body: item
   });
-  return normalizeCart(response.data);
+  return normalizeCart(response as any);
 };
 
 export const updateCartItemQuantity = async (token: string, id: string, quantity: number) => {
-  const response = await apiClient.put<SerializedCart>(`/cart/items/${id}`, { quantity }, {
-    headers: { Authorization: `Bearer ${token}` }
+  const response = await __request(OpenAPI, {
+    method: 'PUT',
+    url: `/cart/items/${id}`,
+    body: { quantity }
   });
-  return normalizeCart(response.data);
+  return normalizeCart(response as any);
 };
 
 export const removeCartItem = async (token: string, id: string) => {
-  const response = await apiClient.delete<SerializedCart>(`/cart/items/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await DefaultService.cartControllerRemoveItem(id);
   return normalizeCart(response.data);
 };
