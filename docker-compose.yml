@@ -24,7 +24,8 @@ services:
 
   inventory-service:
     build:
-      context: ./backend/inventory-service
+      context: .
+      dockerfile: backend/inventory-service/Dockerfile
     environment:
       PORT: 3001
       NODE_ENV: development
@@ -41,7 +42,8 @@ services:
 
   cart-service:
     build:
-      context: ./backend/cart-service
+      context: .
+      dockerfile: backend/cart-service/Dockerfile
     environment:
       NODE_ENV: development
       PORT: 3002
@@ -56,7 +58,8 @@ services:
 
   order-service:
     build:
-      context: ./backend/order-service
+      context: .
+      dockerfile: backend/order-service/Dockerfile
     environment:
       PORT: 3003
       POSTGRES_HOST: postgres
@@ -73,7 +76,8 @@ services:
 
   payment-service:
     build:
-      context: ./backend/payment-service
+      context: .
+      dockerfile: backend/payment-service/Dockerfile
     environment:
       PORT: 3005
       NODE_ENV: development
@@ -84,7 +88,8 @@ services:
 
   gateway:
     build:
-      context: ./backend/gateway
+      context: .
+      dockerfile: backend/gateway/Dockerfile
     environment:
       PORT: 3000
       NODE_ENV: development
@@ -120,6 +125,7 @@ services:
 
 volumes:
   postgres-data:
+
 
 networks:
   floratailor-network:

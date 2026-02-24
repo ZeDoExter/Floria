@@ -1,34 +1,28 @@
-# Tiltfile for Floria Project
-
+# Tiltfile
 docker_compose("docker-compose.yml")
 
-# Config live updates for all Node/Bun projects
-def create_node_build(service_name, path):
+# Config build constraints and dependencies for all Node projects
+# Since we updated to multi-stage production Dockerfiles (node:20-alpine),
+# the final image does not have devDependencies needed for 'live_update' compilation.
+# Tilt will use fast Docker layer caching to rebuild the containers on file changes.
+
+def configure_node_service(service_name, path):
     docker_build(
         service_name,
-        context=path,
-        live_update=[
-            sync(path + "/src", "/usr/src/app/src"),
-            sync(path + "/package.json", "/usr/src/app/package.json"),
-            run("bun run build", trigger=["./src", "./package.json"])
-        ]
+        context=".",
+        dockerfile=path + "/Dockerfile",
+        ignore=["**/node_modules", "**/.git", "**/dist"]
     )
 
-
-create_node_build("inventory-service", "./backend/inventory-service")
-create_node_build("cart-service", "./backend/cart-service")
-create_node_build("order-service", "./backend/order-service")
-create_node_build("payment-service", "./backend/payment-service")
-create_node_build("gateway", "./backend/gateway")
+configure_node_service("inventory-service", "./backend/inventory-service")
+configure_node_service("cart-service", "./backend/cart-service")
+configure_node_service("order-service", "./backend/order-service")
+configure_node_service("payment-service", "./backend/payment-service")
+configure_node_service("gateway", "./backend/gateway")
 
 docker_build(
     "frontend",
     context="./frontend",
-    live_update=[
-        sync("./frontend/src", "/usr/src/app/src"),
-        sync("./frontend/static", "/usr/src/app/static"),
-        sync("./frontend/package.json", "/usr/src/app/package.json"),
-        # depending on builder (vite/sveltekit)
-        run("bun run build || npm run build", trigger=["./src", "./package.json"])
-    ]
+    dockerfile="./frontend/Dockerfile",
+    ignore=["**/node_modules", "**/.git", "**/dist"]
 )
