@@ -22,7 +22,6 @@ export class ProxyService {
 
   constructor(private readonly http: HttpService, configService: ConfigService) {
     this.serviceUrls = {
-      inventory: configService.get<string>('INVENTORY_SERVICE_URL', 'http://inventory-service:3001'),
       cart: configService.get<string>('CART_SERVICE_URL', 'http://cart-service:3002'),
       order: configService.get<string>('ORDER_SERVICE_URL', 'http://order-service:3003'),
       payment: configService.get<string>('PAYMENT_SERVICE_URL', 'http://payment-service:3005')

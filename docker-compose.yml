@@ -22,24 +22,6 @@ services:
     networks:
       - floratailor-network
 
-  inventory-service:
-    build:
-      context: .
-      dockerfile: backend/inventory-service/Dockerfile
-    environment:
-      PORT: 3001
-      NODE_ENV: development
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: flora
-      POSTGRES_PASSWORD: flora
-      POSTGRES_DB: floratailor
-      GATEWAY_URL: http://gateway:3000
-    depends_on:
-      - postgres
-    networks:
-      - floratailor-network
-
   cart-service:
     build:
       context: .
@@ -99,7 +81,6 @@ services:
       NODE_ENV: development
       JWT_SECRET: super-secret-local-key
       CORS_ORIGIN: http://localhost:4173
-      INVENTORY_SERVICE_URL: http://inventory-service:3001
       CART_SERVICE_URL: http://cart-service:3002
       ORDER_SERVICE_URL: http://order-service:3003
       PAYMENT_SERVICE_URL: http://payment-service:3005
@@ -109,7 +90,6 @@ services:
       DB_PASSWORD: flora
       DB_NAME: floratailor
     depends_on:
-      - inventory-service
       - cart-service
       - order-service
       - payment-service

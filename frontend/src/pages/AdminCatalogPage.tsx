@@ -221,10 +221,17 @@ export function AdminCatalogPage() {
         description: editingProduct.description,
         basePrice: Number(editingProduct.basePrice),
         imageUrl: editingProduct.imageUrl,
-        categoryId: editingProduct.categoryId
+        categoryId: editingProduct.categoryId,
+        isOutOfStock: editingProduct.isOutOfStock
       })
       setEditingProduct(null)
     }, "Product updated successfully")
+  }
+
+  const handleToggleStock = (product: Product) => {
+    void runAction(async () => {
+      await updateProduct(product.id, { isOutOfStock: !product.isOutOfStock })
+    }, product.isOutOfStock ? "Product marked as in stock" : "Product marked as sold out")
   }
 
   const handleSaveOptionGroup = () => {
@@ -257,18 +264,18 @@ export function AdminCatalogPage() {
 
   const tabs = ["Products", "Categories", "Option Groups", "Options"]
 
-  const inputClass = "w-full px-4 py-3 rounded-lg border-2 border-secondary bg-card"
-  const cardClass = "rounded-2xl p-6 border-2 bg-card border-secondary"
-  const itemClass = "flex items-start gap-4 p-4 rounded-lg border-2 bg-card border-border"
-  const buttonClass = "p-2 rounded-lg hover:opacity-80 transition-opacity bg-muted"
+  const inputClass = "w-full px-4 py-3 rounded-2xl border-2 border-border bg-card text-foreground focus:outline-none focus:border-primary transition-colors"
+  const cardClass = "rounded-3xl p-6 border-2 bg-card border-border shadow-card"
+  const itemClass = "flex items-start gap-4 p-4 rounded-2xl border-2 bg-card border-border hover:border-primary/30 transition-all duration-200"
+  const buttonClass = "p-2 rounded-full hover:bg-accent transition-colors"
 
   const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: ReactNode }) => {
     if (!isOpen) return null
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-card rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-foreground/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+        <div className="bg-card rounded-3xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border-2 border-border shadow-soft-lg animate-scale-in" onClick={(e) => e.stopPropagation()}>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+            <h2 className="text-xl font-bold font-heading text-foreground">{title}</h2>
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-2xl leading-none">&times;</button>
           </div>
           {children}
@@ -279,17 +286,16 @@ export function AdminCatalogPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-20 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`min-w-72 max-w-96 rounded-lg border px-4 py-3 shadow-sm ${
-              toast.type === "success"
-                ? "bg-success/10 border-success text-success"
-                : "bg-error/10 border-error text-error"
-            }`}
+            className={`min-w-72 max-w-96 rounded-2xl border-2 px-4 py-3 shadow-soft animate-fade-in ${toast.type === "success"
+                ? "bg-success/10 border-success/30 text-success"
+                : "bg-error/10 border-error/30 text-error"
+              }`}
           >
-            <p className="text-sm font-medium">{toast.message}</p>
+            <p className="text-sm font-bold">{toast.type === "success" ? "✨" : "⚠️"} {toast.message}</p>
           </div>
         ))}
       </div>
@@ -297,33 +303,30 @@ export function AdminCatalogPage() {
       <div className="max-w-6xl mx-auto px-8">
         {/* Header */}
         <div className="py-8">
-          <h1 className="text-4xl sm:text-5xl font-light italic text-foreground">Catalog Management</h1>
-          <p className="text-muted-foreground mt-2">Manage your products, categories, and options</p>
+          <h1 className="text-3xl sm:text-4xl font-bold font-heading text-foreground">✨ My Shop</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Manage your products, categories, and options</p>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-border">
-          <div className="flex gap-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab.toLowerCase().replace(" ", "-"))}
-                className={`py-3 px-2 font-medium transition-colors ${
-                  activeTab === tab.toLowerCase().replace(" ", "-")
-                    ? "text-foreground border-b-2 border-secondary"
-                    : "text-muted-foreground"
+        <div className="flex gap-2 mb-8 flex-wrap">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab.toLowerCase().replace(" ", "-"))}
+              className={`py-2 px-5 rounded-full font-bold text-sm transition-all duration-200 ${activeTab === tab.toLowerCase().replace(" ", "-")
+                  ? "bg-primary text-primary-foreground shadow-soft"
+                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
         {/* Main Content */}
-        <div className="py-8">
-          {isLoading && <p className="text-muted-foreground mb-4">Loading catalog...</p>}
-          {error && <p className="text-error mb-4">{error}</p>}
+        <div className="pb-8">
+          {isLoading && <div className="text-center py-8"><span className="animate-pulse-soft text-muted-foreground">🌸 Loading catalog...</span></div>}
+          {error && <div className="bg-error/10 border-2 border-error/20 rounded-2xl p-4 mb-6"><p className="text-error text-sm font-medium">⚠️ {error}</p></div>}
 
           <div className="grid grid-cols-[1fr_2fr] gap-8">
             {/* Products Tab */}
@@ -366,8 +369,8 @@ export function AdminCatalogPage() {
                         ))}
                       </select>
                     </div>
-                    <button onClick={handleCreateProduct} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
-                      Create Product
+                    <button onClick={handleCreateProduct} disabled={isSaving} className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm hover:bg-secondary transition-colors disabled:opacity-60 shadow-soft">
+                      Create Product 🌸
                     </button>
                   </div>
                 </div>
@@ -377,18 +380,36 @@ export function AdminCatalogPage() {
                   <div className="space-y-4">
                     {products.map((product) => (
                       <div key={product.id} className={itemClass}>
-                        <img src={product.imageUrl || "/placeholder.svg"} alt={product.name} className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
+                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-border">
+                          {product.imageUrl ? (
+                            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-accent to-muted flex items-center justify-center"><span className="text-2xl">🌸</span></div>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground">{product.name}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
-                          <div className="flex items-center gap-3 mt-3">
-                            <span className="font-semibold text-secondary">฿{product.basePrice}</span>
-                            <span className="text-xs text-muted-foreground">{getCategoryName(product.categoryId)}</span>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-foreground">{product.name}</h3>
+                            {product.isOutOfStock && (
+                              <span className="text-xs bg-sold-out/10 text-sold-out px-2 py-0.5 rounded-full font-bold">Sold Out</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{product.description}</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="font-bold text-primary">${product.basePrice}</span>
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{getCategoryName(product.categoryId)}</span>
                           </div>
                         </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button onClick={() => handleEditProduct(product)} className={buttonClass}><Edit2Icon size={18} className="text-foreground" /></button>
-                          <button onClick={() => handleDeleteProduct(product.id)} className={buttonClass}><Trash2Icon size={18} className="text-error" /></button>
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          <div className="flex gap-1">
+                            <button onClick={() => handleEditProduct(product)} className={buttonClass} title="Edit"><Edit2Icon size={16} className="text-foreground" /></button>
+                            <button onClick={() => handleDeleteProduct(product.id)} className={buttonClass} title="Delete"><Trash2Icon size={16} className="text-error" /></button>
+                          </div>
+                          <button
+                            onClick={() => handleToggleStock(product)}
+                            className={`toggle-switch ${product.isOutOfStock ? 'active' : ''}`}
+                            title={product.isOutOfStock ? 'Mark as in stock' : 'Mark as sold out'}
+                          />
                         </div>
                       </div>
                     ))}
@@ -637,9 +658,19 @@ export function AdminCatalogPage() {
                 ))}
               </select>
             </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingProduct({ ...editingProduct!, isOutOfStock: !editingProduct!.isOutOfStock })}
+                className={`toggle-switch ${editingProduct!.isOutOfStock ? 'active' : ''}`}
+              />
+              <label className="text-sm font-bold text-foreground">
+                {editingProduct!.isOutOfStock ? '🚫 Sold Out' : '✅ In Stock'}
+              </label>
+            </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setEditingProduct(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveProduct} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
+              <button onClick={() => setEditingProduct(null)} className="px-6 py-2.5 rounded-full bg-muted text-foreground font-bold text-sm hover:bg-border transition-colors">Cancel</button>
+              <button onClick={handleSaveProduct} disabled={isSaving} className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm hover:bg-secondary transition-colors disabled:opacity-60 shadow-soft">Save</button>
             </div>
           </div>
         )}

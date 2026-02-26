@@ -65,22 +65,21 @@ export const submitOrder = async (payload: CheckoutPayload, token: string) => {
   return normalizeOrder(order ?? response);
 };
 
+const extractOrders = (response: any): any[] => {
+  // Handle both { orders: [...] } and { data: { orders: [...] } } shapes
+  const raw = (response as any)?.data ?? response;
+  const orders = raw?.orders ?? (Array.isArray(raw) ? raw : []);
+  return Array.isArray(orders) ? orders : [];
+};
+
 export const fetchOrders = async (token: string) => {
   const response = await DefaultService.ordersControllerList();
-  const orders = (response.data as { orders?: unknown })?.orders;
-  if (!Array.isArray(orders)) {
-    return [];
-  }
-  return orders.map(normalizeOrder);
+  return extractOrders(response).map(normalizeOrder);
 };
 
 export const fetchCustomerOrders = async (token: string) => {
   const response = await DefaultService.ordersControllerListCustomerOrders();
-  const orders = (response.data as { orders?: unknown })?.orders;
-  if (!Array.isArray(orders)) {
-    return [];
-  }
-  return orders.map(normalizeOrder);
+  return extractOrders(response).map(normalizeOrder);
 };
 
 export const updateOrderStatus = async (orderId: string, status: OrderStatus, token: string) => {

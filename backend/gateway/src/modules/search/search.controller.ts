@@ -1,13 +1,12 @@
-import { Controller, Get, Query, Req } from '@nestjs/common';
-import { ProxyService } from '../proxy/proxy.service.js';
-import { RequestWithUser } from '../../common/auth.middleware.js';
+import { Controller, Get, Query } from '@nestjs/common';
+import { CatalogService } from '../products/catalog.service.js';
 
 @Controller('search')
 export class SearchController {
-  constructor(private readonly proxy: ProxyService) { }
+  constructor(private readonly catalog: CatalogService) { }
 
   @Get('products')
-  searchProducts(@Query('q') query: string, @Req() req: RequestWithUser) {
-    return this.proxy.get('inventory', '/search', { user: req.user, params: { q: query } });
+  searchProducts(@Query('q') query: string) {
+    return this.catalog.searchProducts(query || '');
   }
 }

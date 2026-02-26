@@ -14,7 +14,6 @@ def configure_node_service(service_name, path):
         ignore=["**/node_modules", "**/.git", "**/dist"]
     )
 
-configure_node_service("inventory-service", "./backend/inventory-service")
 configure_node_service("cart-service", "./backend/cart-service")
 configure_node_service("order-service", "./backend/order-service")
 configure_node_service("payment-service", "./backend/payment-service")

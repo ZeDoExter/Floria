@@ -15,6 +15,10 @@ import { AuthMiddleware } from './common/auth.middleware.js';
 import { ProxyModule } from './modules/proxy/proxy.module.js';
 import { Account } from './entities/account.entity.js';
 import { User } from './entities/user.entity.js';
+import { Category } from './entities/category.entity.js';
+import { Product } from './entities/product.entity.js';
+import { OptionGroup } from './entities/option-group.entity.js';
+import { Option } from './entities/option.entity.js';
 import { HealthModule } from 'floria-shared';
 
 @Module({
@@ -29,7 +33,7 @@ import { HealthModule } from 'floria-shared';
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [User, Account],
+        entities: [User, Account, Category, Product, OptionGroup, Option],
         synchronize: true, // Auto-sync schema in dev
       }),
       inject: [ConfigService],

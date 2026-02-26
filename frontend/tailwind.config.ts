@@ -8,6 +8,10 @@ const config: Config = {
   darkMode: ['class', '.dark'],
   theme: {
     extend: {
+      fontFamily: {
+        heading: ['Quicksand', 'Nunito', 'sans-serif'],
+        body: ['Nunito', 'Quicksand', 'sans-serif'],
+      },
       colors: {
         background: 'var(--color-background)',
         foreground: 'var(--color-foreground)',
@@ -23,14 +27,36 @@ const config: Config = {
           DEFAULT: 'var(--color-secondary)',
           foreground: 'var(--color-secondary-foreground)',
         },
+        accent: {
+          DEFAULT: 'var(--color-accent)',
+          foreground: 'var(--color-accent-foreground)',
+        },
         muted: {
           DEFAULT: 'var(--color-muted)',
           foreground: 'var(--color-muted-foreground)',
         },
         border: 'var(--color-border)',
-        success: 'var(--color-success)',
-        error: 'var(--color-error)',
-      }
+        success: {
+          DEFAULT: 'var(--color-success)',
+          foreground: 'var(--color-success-foreground)',
+        },
+        error: {
+          DEFAULT: 'var(--color-error)',
+          foreground: 'var(--color-error-foreground)',
+        },
+        warning: 'var(--color-warning)',
+        'sold-out': 'var(--color-sold-out)',
+      },
+      borderRadius: {
+        '2xl': '16px',
+        '3xl': '24px',
+      },
+      boxShadow: {
+        'soft': '0 2px 12px rgba(242, 167, 179, 0.15)',
+        'soft-lg': '0 4px 24px rgba(242, 167, 179, 0.2)',
+        'card': '0 1px 8px rgba(61, 44, 46, 0.06)',
+        'card-hover': '0 8px 30px rgba(242, 167, 179, 0.25)',
+      },
     }
   },
   plugins: []

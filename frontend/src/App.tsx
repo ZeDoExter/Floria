@@ -4,6 +4,7 @@ import { ProductDetailPage } from './pages/ProductDetailPage';
 import { ShopDetailPage } from './pages/ShopDetailPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
+import { OrderSuccessPage } from './pages/OrderSuccessPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
 import { OrderHistoryPage } from './pages/OrderHistoryPage';
@@ -23,7 +24,9 @@ function App() {
           <Route path="/shops/:ownerId" element={<ShopDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout/success" element={<OrderSuccessPage />} />
           <Route path="/login" element={<ProfilePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/orders" element={<OrderHistoryPage />} />
           <Route path="/customer-orders" element={<CustomerOrdersPage />} />

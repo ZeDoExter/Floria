@@ -1,33 +1,40 @@
-import { Body, Controller, Get, Param, Post, Put, Delete, Req, Query } from '@nestjs/common';
-import { ProxyService } from '../proxy/proxy.service.js';
+import { Body, Controller, Get, Param, Post, Put, Delete, Req, Query, UseGuards } from '@nestjs/common';
+import { CatalogService } from './catalog.service.js';
 import { RequestWithUser } from '../../common/auth.middleware.js';
+import { CreateProductDto } from './dto/create-product.dto.js';
+import { UpdateProductDto } from './dto/update-product.dto.js';
+import { ProductOwnerGuard } from '../../common/guards/product-owner.guard.js';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly proxy: ProxyService) { }
+  constructor(private readonly catalog: CatalogService) { }
 
   @Get()
-  list(@Req() req: RequestWithUser, @Query() query: Record<string, string>) {
-    return this.proxy.get('inventory', '/products', { user: req.user, params: query });
+  list(@Req() req: RequestWithUser, @Query('filterByOwner') filterByOwner?: string) {
+    const userId = req.user?.userId;
+    return this.catalog.listProducts(filterByOwner === 'true' && userId ? userId : undefined);
   }
 
   @Get(':id')
-  detail(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.proxy.get('inventory', `/products/${id}`, { user: req.user });
+  detail(@Param('id') id: string) {
+    return this.catalog.getProduct(id);
   }
 
   @Post()
-  create(@Body() body: unknown, @Req() req: RequestWithUser) {
-    return this.proxy.post('inventory', '/products', body, { user: req.user });
+  create(@Body() dto: CreateProductDto, @Req() req: RequestWithUser) {
+    const userId = req.user?.userId ?? '';
+    return this.catalog.createProduct(dto, userId);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: unknown, @Req() req: RequestWithUser) {
-    return this.proxy.put('inventory', `/products/${id}`, body, { user: req.user });
+  @UseGuards(ProductOwnerGuard)
+  update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
+    return this.catalog.updateProduct(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.proxy.delete('inventory', `/products/${id}`, { user: req.user });
+  @UseGuards(ProductOwnerGuard)
+  remove(@Param('id') id: string) {
+    return this.catalog.deleteProduct(id);
   }
 }

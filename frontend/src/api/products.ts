@@ -16,6 +16,7 @@ export interface ProductSummary {
   categoryId?: string;
   categoryName?: string;
   ownerId?: string;
+  isOutOfStock?: boolean;
 }
 
 export interface ProductDetail extends ProductSummary {

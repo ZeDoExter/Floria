@@ -1,24 +1,27 @@
-import { Body, Controller, Delete, Param, Post, Put, Req } from '@nestjs/common';
-import { ProxyService } from '../proxy/proxy.service.js';
-import { RequestWithUser } from '../../common/auth.middleware.js';
+import { Body, Controller, Delete, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { CatalogService } from './catalog.service.js';
+import { CreateOptionDto } from './dto/create-option.dto.js';
+import { UpdateOptionDto } from './dto/update-option.dto.js';
+import { OptionOwnerGuard } from '../../common/guards/option-owner.guard.js';
 
 @Controller('options')
 export class OptionsController {
-  constructor(private readonly proxy: ProxyService) {}
+  constructor(private readonly catalog: CatalogService) { }
 
   @Post()
-  create(@Body() body: unknown, @Req() req: RequestWithUser) {
-    return this.proxy.post('inventory', '/options', body, { user: req.user });
+  create(@Body() dto: CreateOptionDto) {
+    return this.catalog.createOption(dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: unknown, @Req() req: RequestWithUser) {
-    return this.proxy.put('inventory', `/options/${id}`, body, { user: req.user });
+  @UseGuards(OptionOwnerGuard)
+  update(@Param('id') id: string, @Body() dto: UpdateOptionDto) {
+    return this.catalog.updateOption(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.proxy.delete('inventory', `/options/${id}`, { user: req.user });
+  @UseGuards(OptionOwnerGuard)
+  remove(@Param('id') id: string) {
+    return this.catalog.deleteOption(id);
   }
 }
-

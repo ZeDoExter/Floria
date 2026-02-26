@@ -29,7 +29,7 @@ async function bootstrap() {
   const port = configService.get('PORT') || 3003;
   await app.listen(port);
   // eslint-disable-next-line no-console
-  console.log(`Order service running on port ${port}`);
+  console.log(`Payment service running on port ${port}`);
 }
 
 void bootstrap();

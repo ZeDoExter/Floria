@@ -1,29 +1,36 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, Query } from '@nestjs/common';
-import { ProxyService } from '../proxy/proxy.service.js';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, Query, UseGuards } from '@nestjs/common';
+import { CatalogService } from './catalog.service.js';
 import { RequestWithUser } from '../../common/auth.middleware.js';
+import { CreateCategoryDto } from './dto/create-category.dto.js';
+import { UpdateCategoryDto } from './dto/update-category.dto.js';
+import { CategoryOwnerGuard } from '../../common/guards/category-owner.guard.js';
 
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly proxy: ProxyService) {}
+  constructor(private readonly catalog: CatalogService) { }
 
   @Get()
-  list(@Req() req: RequestWithUser, @Query() query: Record<string, string>) {
-    return this.proxy.get('inventory', '/categories', { user: req.user, params: query });
+  list(@Req() req: RequestWithUser, @Query('filterByOwner') filterByOwner?: string) {
+    const userId = req.user?.userId;
+    return this.catalog.listCategories(filterByOwner === 'true' && userId ? userId : undefined);
   }
 
   @Post()
-  create(@Body() body: unknown, @Req() req: RequestWithUser) {
-    return this.proxy.post('inventory', '/categories', body, { user: req.user });
+  create(@Body() dto: CreateCategoryDto, @Req() req: RequestWithUser) {
+    const userId = req.user?.userId ?? '';
+    return this.catalog.createCategory(dto, userId);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: unknown, @Req() req: RequestWithUser) {
-    return this.proxy.put('inventory', `/categories/${id}`, body, { user: req.user });
+  @UseGuards(CategoryOwnerGuard)
+  update(@Param('id') id: string, @Body() dto: UpdateCategoryDto, @Req() req: RequestWithUser) {
+    const userId = req.user?.userId ?? '';
+    return this.catalog.updateCategory(id, dto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.proxy.delete('inventory', `/categories/${id}`, { user: req.user });
+  @UseGuards(CategoryOwnerGuard)
+  remove(@Param('id') id: string) {
+    return this.catalog.removeCategory(id);
   }
 }
-

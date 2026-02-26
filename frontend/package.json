@@ -10,6 +10,7 @@
     "gen:api": "openapi --input ./swagger.json --output ./src/api --client axios"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^8.8.0",
     "@tailwindcss/vite": "^4.1.17",
     "axios": "1.6.8",
     "dayjs": "1.11.10",

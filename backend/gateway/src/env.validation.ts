@@ -21,9 +21,6 @@ class EnvironmentVariables {
     CORS_ORIGIN!: string;
 
     @IsUrl({ require_tld: false })
-    INVENTORY_SERVICE_URL!: string;
-
-    @IsUrl({ require_tld: false })
     CART_SERVICE_URL!: string;
 
     @IsUrl({ require_tld: false })

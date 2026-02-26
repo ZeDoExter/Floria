@@ -44,7 +44,7 @@ const DIRECTORY_USERS: DirectoryUser[] = [
   },
   {
     email: 'flora.customer@example.com',
-    displayName: 'Loyal customer',
+    displayName: 'Customer',
     role: 'customer',
     description: 'Typical shopper profile for validating retail purchase flows.',
     capabilities: ['Browse, customize, and purchase arrangements', 'View their personal order history']

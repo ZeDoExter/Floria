@@ -14,6 +14,7 @@ export interface Product {
   basePrice: number;
   imageUrl?: string;
   categoryId: string;
+  isOutOfStock?: boolean;
 }
 
 export interface Option {
@@ -161,6 +162,7 @@ export interface UpsertProductInput {
   basePrice: number;
   imageUrl?: string;
   categoryId: string;
+  isOutOfStock?: boolean;
 }
 
 export const createProduct = async (input: UpsertProductInput): Promise<Product> => {
@@ -178,11 +180,12 @@ export const createProduct = async (input: UpsertProductInput): Promise<Product>
     description: product.description ?? undefined,
     basePrice: toNumber(product.basePrice),
     imageUrl: product.imageUrl ?? undefined,
-    categoryId: product.categoryId ?? product.category?.id
+    categoryId: product.categoryId ?? product.category?.id,
+    isOutOfStock: Boolean(product.isOutOfStock)
   };
 };
 
-export const updateProduct = async (id: string, input: UpsertProductInput): Promise<Product> => {
+export const updateProduct = async (id: string, input: Partial<UpsertProductInput>): Promise<Product> => {
   const response = await __request(OpenAPI, {
     method: 'PUT',
     url: '/products/{id}',
@@ -198,7 +201,8 @@ export const updateProduct = async (id: string, input: UpsertProductInput): Prom
     description: product.description ?? undefined,
     basePrice: toNumber(product.basePrice),
     imageUrl: product.imageUrl ?? undefined,
-    categoryId: product.categoryId ?? product.category?.id
+    categoryId: product.categoryId ?? product.category?.id,
+    isOutOfStock: Boolean(product.isOutOfStock)
   };
 };
 

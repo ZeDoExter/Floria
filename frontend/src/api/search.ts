@@ -21,5 +21,8 @@ export const searchProducts = async (query: string): Promise<SearchProductResult
   }
 
   const response = await DefaultService.searchControllerSearchProducts(query);
-  return response.data.results;
+  const data = (response as any)?.data ?? response;
+  if (Array.isArray(data?.results)) return data.results as SearchProductResult[];
+  if (Array.isArray(data)) return data as SearchProductResult[];
+  return [];
 };

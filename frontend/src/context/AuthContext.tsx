@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Credentials, loginRequest, registerRequest } from '../api/client';
 import { UserRole } from '../utils/auth';
 
@@ -23,11 +23,16 @@ const LOCAL_STORAGE_KEY = 'flora-tailor/auth';
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  // Prevent the persistence effect from wiping localStorage before hydration completes
+  const hasHydrated = useRef(false);
 
+  // Effect 1: hydrate from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!stored) {
+      hasHydrated.current = true;
+      setIsLoading(false);
       return;
     }
 
@@ -47,10 +52,15 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     } catch (error) {
       console.warn('Failed to parse stored auth state', error);
       localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } finally {
+      hasHydrated.current = true;
+      setIsLoading(false);
     }
   }, []);
 
+  // Effect 2: persist auth to localStorage whenever user changes — but only AFTER hydration
   useEffect(() => {
+    if (!hasHydrated.current) return;
     if (user) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(user));
     } else {
