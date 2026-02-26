@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Relation } from 'typeorm';
-import { OrderItem } from './order-item.entity';
-import { CartItem } from './cart-item.entity';
-import { OptionGroup } from './option-group.entity';
+import { OrderItem } from './order-item.entity.js';
+import { CartItem } from './cart-item.entity.js';
+import { OptionGroup } from './option-group.entity.js';
 
 @Entity()
 export class Product {

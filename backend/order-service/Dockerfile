@@ -3,12 +3,13 @@ WORKDIR /usr/src/app
 
 FROM base AS deps
 COPY backend/shared ./backend/shared
+RUN cd backend/shared && npm install && npm run build
 COPY backend/order-service/package.json backend/order-service/package-lock.json* ./backend/order-service/
 RUN cd backend/order-service && npm install
 
 FROM base AS builder
 COPY --from=deps /usr/src/app/backend/order-service/node_modules ./backend/order-service/node_modules
-COPY backend/shared ./backend/shared
+COPY --from=deps /usr/src/app/backend/shared ./backend/shared
 COPY backend/order-service ./backend/order-service
 RUN cd backend/order-service && npm run build
 
@@ -16,7 +17,7 @@ FROM base AS runner
 ENV NODE_ENV=production
 RUN apk add --no-cache openssl
 
-COPY backend/shared ./backend/shared
+COPY --from=deps /usr/src/app/backend/shared ./backend/shared
 COPY backend/order-service/package.json backend/order-service/package-lock.json* ./backend/order-service/
 RUN cd backend/order-service && npm install --omit=dev && npm cache clean --force
 

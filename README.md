@@ -56,9 +56,14 @@ Flora Tailor เป็นระบบ E-Commerce แบบ Microservices ปร�
    จากนั้นเข้าดูเว็บไซต์ได้ที่ `http://localhost:5173` (หรือพอร์ตที่ React/Vite กำหนด)
 
 4. **การจำลองข้อมูลเริ่มต้น (Seeding):**
-   หากต้องการใส่ข้อมูลจำลองลงในฐานข้อมูล
+   หากต้องการใส่ข้อมูลจำลองลงในฐานข้อมูล (รองรับการรันซ้ำแบบไม่สร้างข้อมูลซ้ำ)
    ```bash
-   node seed-all.js
+   npm run seed:init
+   ```
+
+   ถ้า Gateway ไม่ได้รันที่ `http://localhost:3000` สามารถกำหนดปลายทางได้:
+   ```bash
+   API_BASE=http://localhost:3000 npm run seed:init
    ```
 
 ---

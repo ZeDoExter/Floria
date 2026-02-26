@@ -3,8 +3,8 @@ import {
   CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne,
   Relation, JoinColumn
 } from 'typeorm';
-import { Option } from './option.entity';
-import { Product } from './product.entity';
+import { Option } from './option.entity.js';
+import { Product } from './product.entity.js';
 
 @Entity()
 export class OptionGroup {

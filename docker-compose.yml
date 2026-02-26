@@ -82,7 +82,11 @@ services:
       PORT: 3005
       NODE_ENV: development
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_fake}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_test_fake}
+      ORDER_SERVICE_URL: http://order-service:3003
       CORS_ORIGIN: http://localhost:4173
+    depends_on:
+      - order-service
     networks:
       - floratailor-network
 
@@ -99,11 +103,17 @@ services:
       CART_SERVICE_URL: http://cart-service:3002
       ORDER_SERVICE_URL: http://order-service:3003
       PAYMENT_SERVICE_URL: http://payment-service:3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: flora
+      DB_PASSWORD: flora
+      DB_NAME: floratailor
     depends_on:
       - inventory-service
       - cart-service
       - order-service
       - payment-service
+      - postgres
     ports:
       - '3000:3000'
     networks:

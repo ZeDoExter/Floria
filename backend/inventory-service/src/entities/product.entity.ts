@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, Relation, JoinColumn } from 'typeorm';
-import { Category } from './category.entity';
-import { OptionGroup } from './option-group.entity';
+import { Category } from './category.entity.js';
+import { OptionGroup } from './option-group.entity.js';
 
 @Entity()
 export class Product {

@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Option } from '../../entities/option.entity';
+import { Option } from '../../entities/option.entity.js';
 
 @Injectable()
 export class OptionOwnerGuard implements CanActivate {

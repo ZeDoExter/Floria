@@ -1,0 +1,7 @@
+{
+  "name": "floria-workspace",
+  "private": true,
+  "scripts": {
+    "seed:init": "node seed-all.js"
+  }
+}

@@ -3,8 +3,8 @@ import {
   CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne,
   Relation, JoinColumn
 } from 'typeorm';
-import { OrderItem } from './order-item.entity';
-import { User } from './user.entity';
+import { OrderItem } from './order-item.entity.js';
+import { User } from './user.entity.js';
 
 @Entity()
 export class Order {

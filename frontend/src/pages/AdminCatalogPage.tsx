@@ -1,91 +1,49 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { PlusIcon } from "../components/icons/PlusIcon"
 import { Edit2Icon } from "../components/icons/Edit2Icon"
 import { Trash2Icon } from "../components/icons/Trash2Icon"
+import {
+  createCategory,
+  createOption,
+  createOptionGroup,
+  createProduct,
+  deleteCategory,
+  deleteOption,
+  deleteOptionGroup,
+  deleteProduct,
+  fetchCatalogData,
+  type Category,
+  type Option,
+  type OptionGroup,
+  type Product,
+  updateCategory,
+  updateOption,
+  updateOptionGroup,
+  updateProduct
+} from "../api/catalog"
 
-interface Category {
-  id: string
-  name: string
-  description: string
-}
-
-interface Product {
-  id: number
-  name: string
-  description: string
-  basePrice: number
-  imageUrl: string
-  categoryId: string
-}
-
-interface OptionGroup {
-  id: string
-  productId: number
-  name: string
-  description: string
-  isRequired: boolean
-  minSelect: number
-  maxSelect: number
-}
-
-interface Option {
-  id: string
-  optionGroupId: string
-  name: string
-  description: string
-  priceModifier: number
+const formatError = (error: unknown) => {
+  if (error instanceof Error) return error.message
+  return "Something went wrong."
 }
 
 export function AdminCatalogPage() {
+  type ToastType = "success" | "error"
+  type ToastItem = {
+    id: number
+    type: ToastType
+    message: string
+  }
+
   const [activeTab, setActiveTab] = useState("products")
-  
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "cat-001", name: "ช่อดอกไม้งานแต่ง", description: "ช่อดอกไม้พรีเมียมสำหรับงานพิธีและงานแต่งงาน" },
-    { id: "cat-002", name: "ช่อดอกไม้ประจำวัน", description: "ช่อดอกไม้สดสวยสำหรับทุกโอกาส" },
-    { id: "cat-003", name: "ช่อดอกไม้พรีเมียม", description: "ช่อดอกไม้หรูหราสำหรับโอกาสพิเศษ" },
-    { id: "cat-004", name: "ช่อดอกไม้สไตล์มินิมอล", description: "ช่อดอกไม้เรียบง่ายแต่สวยงาม" },
-  ])
-
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 1,
-      name: "ช่อกุหลาบออโรร่า",
-      description: "ช่อกุหลาบสีชมพูอ่อน 24 ดอก พร้อมใบยูคาลิปตัสและดอกไม้ประดับ",
-      basePrice: 2590,
-      imageUrl: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=200&h=200&fit=crop",
-      categoryId: "cat-001",
-    },
-    {
-      id: 2,
-      name: "ช่อทิวลิปพาสเทล",
-      description: "ช่อทิวลิปสีพาสเทลหวานๆ ผสมสีชมพู ม่วง และขาว",
-      basePrice: 1890,
-      imageUrl: "https://images.unsplash.com/photo-1520763185298-1b434c919eba?w=200&h=200&fit=crop",
-      categoryId: "cat-002",
-    },
-    {
-      id: 3,
-      name: "ช่อดอกไม้ผสม Garden Dream",
-      description: "ช่อดอกไม้ผสมหรูหรา ประกอบด้วยกุหลาบ ลิลลี่ ไฮเดรนเยีย",
-      basePrice: 3200,
-      imageUrl: "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=200&h=200&fit=crop",
-      categoryId: "cat-003",
-    },
-  ])
-
-  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([
-    { id: "og-001", productId: 1, name: "บรรจุภัณฑ์", description: "เลือกรูปแบบการห่อช่อดอกไม้", isRequired: true, minSelect: 1, maxSelect: 1 },
-    { id: "og-002", productId: 1, name: "การ์ดข้อความ", description: "เพิ่มการ์ดพร้อมข้อความพิเศษ", isRequired: false, minSelect: 0, maxSelect: 1 },
-    { id: "og-003", productId: 2, name: "ขนาดช่อ", description: "เลือกขนาดช่อดอกไม้", isRequired: true, minSelect: 1, maxSelect: 1 },
-  ])
-
-  const [options, setOptions] = useState<Option[]>([
-    { id: "opt-001", optionGroupId: "og-001", name: "กล่องของขวัญหรู", description: "กล่องแข็งพรีเมียมพร้อมริบบิ้นซาติน", priceModifier: 450 },
-    { id: "opt-002", optionGroupId: "og-001", name: "ห่อคราฟท์", description: "กระดาษคราฟท์รีไซเคิล", priceModifier: 120 },
-    { id: "opt-003", optionGroupId: "og-002", name: "การ์ดมาตรฐาน", description: "การ์ดขาวพร้อมซอง", priceModifier: 0 },
-    { id: "opt-004", optionGroupId: "og-003", name: "เล็ก - 12 ดอก", description: "ช่อขนาดเล็กกะทัดรัด", priceModifier: 0 },
-    { id: "opt-005", optionGroupId: "og-003", name: "กลาง - 24 ดอก", description: "ช่อขนาดกลาง", priceModifier: 600 },
-  ])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([])
+  const [options, setOptions] = useState<Option[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const [categoryForm, setCategoryForm] = useState({ name: "", description: "" })
   const [productForm, setProductForm] = useState({ name: "", description: "", basePrice: "", imageUrl: "", categoryId: "" })
@@ -97,10 +55,147 @@ export function AdminCatalogPage() {
   const [editingOptionGroup, setEditingOptionGroup] = useState<OptionGroup | null>(null)
   const [editingOption, setEditingOption] = useState<Option | null>(null)
 
-  const handleDeleteCategory = (id: string) => setCategories(categories.filter((c) => c.id !== id))
-  const handleDeleteProduct = (id: number) => setProducts(products.filter((p) => p.id !== id))
-  const handleDeleteOptionGroup = (id: string) => setOptionGroups(optionGroups.filter((og) => og.id !== id))
-  const handleDeleteOption = (id: string) => setOptions(options.filter((o) => o.id !== id))
+  const pushToast = (type: ToastType, message: string) => {
+    const id = Date.now() + Math.floor(Math.random() * 1000)
+    setToasts((prev) => [...prev, { id, type, message }])
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id))
+    }, 3500)
+  }
+
+  const reloadCatalog = async () => {
+    try {
+      setError(null)
+      const catalog = await fetchCatalogData()
+      setCategories(catalog.categories)
+      setProducts(catalog.products)
+      setOptionGroups(catalog.optionGroups)
+      setOptions(catalog.options)
+    } catch (err) {
+      setError(formatError(err))
+    }
+  }
+
+  useEffect(() => {
+    const run = async () => {
+      setIsLoading(true)
+      await reloadCatalog()
+      setIsLoading(false)
+    }
+    void run()
+  }, [])
+
+  const runAction = async (action: () => Promise<void>, successMessage: string) => {
+    try {
+      setIsSaving(true)
+      setError(null)
+      await action()
+      await reloadCatalog()
+      pushToast("success", successMessage)
+    } catch (err) {
+      const message = formatError(err)
+      setError(message)
+      pushToast("error", message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const categoryNameMap = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories]
+  )
+
+  const productNameMap = useMemo(
+    () => new Map(products.map((product) => [product.id, product.name])),
+    [products]
+  )
+
+  const optionGroupNameMap = useMemo(
+    () => new Map(optionGroups.map((group) => [group.id, group.name])),
+    [optionGroups]
+  )
+
+  const getCategoryName = (categoryId: string) => categoryNameMap.get(categoryId) || categoryId
+  const getProductName = (productId: string) => productNameMap.get(productId) || "Unknown product"
+  const getOptionGroupName = (optionGroupId: string) => optionGroupNameMap.get(optionGroupId) || optionGroupId
+
+  const handleCreateCategory = () => {
+    if (!categoryForm.name.trim()) return
+    void runAction(async () => {
+      await createCategory({
+        name: categoryForm.name.trim(),
+        description: categoryForm.description.trim() || undefined
+      })
+      setCategoryForm({ name: "", description: "" })
+    }, "Category created successfully")
+  }
+
+  const handleCreateProduct = () => {
+    if (!productForm.name.trim() || !productForm.categoryId || !productForm.basePrice) return
+    void runAction(async () => {
+      await createProduct({
+        name: productForm.name.trim(),
+        description: productForm.description.trim() || undefined,
+        basePrice: Number(productForm.basePrice),
+        imageUrl: productForm.imageUrl.trim() || undefined,
+        categoryId: productForm.categoryId
+      })
+      setProductForm({ name: "", description: "", basePrice: "", imageUrl: "", categoryId: "" })
+    }, "Product created successfully")
+  }
+
+  const handleCreateOptionGroup = () => {
+    if (!optionGroupForm.name.trim() || !optionGroupForm.productId) return
+    void runAction(async () => {
+      await createOptionGroup({
+        productId: optionGroupForm.productId,
+        name: optionGroupForm.name.trim(),
+        description: optionGroupForm.description.trim() || undefined,
+        isRequired: optionGroupForm.isRequired,
+        minSelect: Number(optionGroupForm.minSelect),
+        maxSelect: Number(optionGroupForm.maxSelect)
+      })
+      setOptionGroupForm({ productId: "", name: "", description: "", isRequired: false, minSelect: "1", maxSelect: "1" })
+    }, "Option group created successfully")
+  }
+
+  const handleCreateOption = () => {
+    if (!optionForm.name.trim() || !optionForm.optionGroupId) return
+    void runAction(async () => {
+      await createOption({
+        optionGroupId: optionForm.optionGroupId,
+        name: optionForm.name.trim(),
+        description: optionForm.description.trim() || undefined,
+        priceModifier: Number(optionForm.priceModifier)
+      })
+      setOptionForm({ optionGroupId: "", name: "", description: "", priceModifier: "0" })
+    }, "Option created successfully")
+  }
+
+  const handleDeleteCategory = (id: string) => {
+    void runAction(async () => {
+      await deleteCategory(id)
+    }, "Category deleted successfully")
+  }
+
+  const handleDeleteProduct = (id: string) => {
+    void runAction(async () => {
+      await deleteProduct(id)
+    }, "Product deleted successfully")
+  }
+
+  const handleDeleteOptionGroup = (id: string) => {
+    void runAction(async () => {
+      await deleteOptionGroup(id)
+    }, "Option group deleted successfully")
+  }
+
+  const handleDeleteOption = (id: string) => {
+    void runAction(async () => {
+      await deleteOption(id)
+    }, "Option deleted successfully")
+  }
 
   const handleEditCategory = (category: Category) => setEditingCategory(category)
   const handleEditProduct = (product: Product) => setEditingProduct(product)
@@ -108,36 +203,57 @@ export function AdminCatalogPage() {
   const handleEditOption = (option: Option) => setEditingOption(option)
 
   const handleSaveCategory = () => {
-    if (editingCategory) {
-      setCategories(categories.map((c) => (c.id === editingCategory.id ? editingCategory : c)))
+    if (!editingCategory) return
+    void runAction(async () => {
+      await updateCategory(editingCategory.id, {
+        name: editingCategory.name,
+        description: editingCategory.description
+      })
       setEditingCategory(null)
-    }
+    }, "Category updated successfully")
   }
 
   const handleSaveProduct = () => {
-    if (editingProduct) {
-      setProducts(products.map((p) => (p.id === editingProduct.id ? editingProduct : p)))
+    if (!editingProduct) return
+    void runAction(async () => {
+      await updateProduct(editingProduct.id, {
+        name: editingProduct.name,
+        description: editingProduct.description,
+        basePrice: Number(editingProduct.basePrice),
+        imageUrl: editingProduct.imageUrl,
+        categoryId: editingProduct.categoryId
+      })
       setEditingProduct(null)
-    }
+    }, "Product updated successfully")
   }
 
   const handleSaveOptionGroup = () => {
-    if (editingOptionGroup) {
-      setOptionGroups(optionGroups.map((og) => (og.id === editingOptionGroup.id ? editingOptionGroup : og)))
+    if (!editingOptionGroup) return
+    void runAction(async () => {
+      await updateOptionGroup(editingOptionGroup.id, {
+        productId: editingOptionGroup.productId,
+        name: editingOptionGroup.name,
+        description: editingOptionGroup.description,
+        isRequired: editingOptionGroup.isRequired,
+        minSelect: Number(editingOptionGroup.minSelect),
+        maxSelect: Number(editingOptionGroup.maxSelect)
+      })
       setEditingOptionGroup(null)
-    }
+    }, "Option group updated successfully")
   }
 
   const handleSaveOption = () => {
-    if (editingOption) {
-      setOptions(options.map((o) => (o.id === editingOption.id ? editingOption : o)))
+    if (!editingOption) return
+    void runAction(async () => {
+      await updateOption(editingOption.id, {
+        optionGroupId: editingOption.optionGroupId,
+        name: editingOption.name,
+        description: editingOption.description,
+        priceModifier: Number(editingOption.priceModifier)
+      })
       setEditingOption(null)
-    }
+    }, "Option updated successfully")
   }
-
-  const getCategoryName = (categoryId: string) => categories.find((c) => c.id === categoryId)?.name || categoryId
-  const getProductName = (productId: number) => products.find((p) => p.id === productId)?.name || `Product ${productId}`
-  const getOptionGroupName = (optionGroupId: string) => optionGroups.find((og) => og.id === optionGroupId)?.name || optionGroupId
 
   const tabs = ["Products", "Categories", "Option Groups", "Options"]
 
@@ -146,7 +262,7 @@ export function AdminCatalogPage() {
   const itemClass = "flex items-start gap-4 p-4 rounded-lg border-2 bg-card border-border"
   const buttonClass = "p-2 rounded-lg hover:opacity-80 transition-opacity bg-muted"
 
-  const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }) => {
+  const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: ReactNode }) => {
     if (!isOpen) return null
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
@@ -163,6 +279,21 @@ export function AdminCatalogPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`min-w-72 max-w-96 rounded-lg border px-4 py-3 shadow-sm ${
+              toast.type === "success"
+                ? "bg-success/10 border-success text-success"
+                : "bg-error/10 border-error text-error"
+            }`}
+          >
+            <p className="text-sm font-medium">{toast.message}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="max-w-6xl mx-auto px-8">
         {/* Header */}
         <div className="py-8">
@@ -191,6 +322,9 @@ export function AdminCatalogPage() {
 
         {/* Main Content */}
         <div className="py-8">
+          {isLoading && <p className="text-muted-foreground mb-4">Loading catalog...</p>}
+          {error && <p className="text-error mb-4">{error}</p>}
+
           <div className="grid grid-cols-[1fr_2fr] gap-8">
             {/* Products Tab */}
             {activeTab === "products" && (
@@ -232,6 +366,9 @@ export function AdminCatalogPage() {
                         ))}
                       </select>
                     </div>
+                    <button onClick={handleCreateProduct} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
+                      Create Product
+                    </button>
                   </div>
                 </div>
 
@@ -279,6 +416,9 @@ export function AdminCatalogPage() {
                       <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
                       <textarea value={categoryForm.description} onChange={(e) => setCategoryForm((prev) => ({ ...prev, description: e.target.value }))} rows={3} className={inputClass} />
                     </div>
+                    <button onClick={handleCreateCategory} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
+                      Create Category
+                    </button>
                   </div>
                 </div>
 
@@ -347,6 +487,9 @@ export function AdminCatalogPage() {
                         <input type="number" value={optionGroupForm.maxSelect} onChange={(e) => setOptionGroupForm((prev) => ({ ...prev, maxSelect: e.target.value }))} className={inputClass} />
                       </div>
                     </div>
+                    <button onClick={handleCreateOptionGroup} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
+                      Create Option Group
+                    </button>
                   </div>
                 </div>
 
@@ -411,6 +554,9 @@ export function AdminCatalogPage() {
                       <label className="block text-sm font-semibold text-foreground mb-2">Price Modifier (฿)</label>
                       <input type="number" value={optionForm.priceModifier} onChange={(e) => setOptionForm((prev) => ({ ...prev, priceModifier: e.target.value }))} className={inputClass} />
                     </div>
+                    <button onClick={handleCreateOption} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
+                      Create Option
+                    </button>
                   </div>
                 </div>
 
@@ -453,11 +599,11 @@ export function AdminCatalogPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
-              <textarea value={editingCategory.description} onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })} rows={3} className={inputClass} />
+              <textarea value={editingCategory.description ?? ""} onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })} rows={3} className={inputClass} />
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setEditingCategory(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveCategory} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80">Save</button>
+              <button onClick={handleSaveCategory} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
             </div>
           </div>
         )}
@@ -472,7 +618,7 @@ export function AdminCatalogPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
-              <textarea value={editingProduct.description} onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })} rows={3} className={inputClass} />
+              <textarea value={editingProduct.description ?? ""} onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })} rows={3} className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Base Price (฿) <span className="text-error">*</span></label>
@@ -480,7 +626,7 @@ export function AdminCatalogPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Image URL</label>
-              <input type="text" value={editingProduct.imageUrl} onChange={(e) => setEditingProduct({ ...editingProduct, imageUrl: e.target.value })} className={inputClass} />
+              <input type="text" value={editingProduct.imageUrl ?? ""} onChange={(e) => setEditingProduct({ ...editingProduct, imageUrl: e.target.value })} className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Category <span className="text-error">*</span></label>
@@ -493,7 +639,7 @@ export function AdminCatalogPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setEditingProduct(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveProduct} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80">Save</button>
+              <button onClick={handleSaveProduct} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
             </div>
           </div>
         )}
@@ -504,7 +650,7 @@ export function AdminCatalogPage() {
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Product <span className="text-error">*</span></label>
-              <select value={editingOptionGroup.productId} onChange={(e) => setEditingOptionGroup({ ...editingOptionGroup, productId: Number(e.target.value) })} className={inputClass}>
+              <select value={editingOptionGroup.productId} onChange={(e) => setEditingOptionGroup({ ...editingOptionGroup, productId: e.target.value })} className={inputClass}>
                 <option value="">Select product...</option>
                 {products.map((prod) => (
                   <option key={prod.id} value={prod.id}>{prod.name}</option>
@@ -517,7 +663,7 @@ export function AdminCatalogPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
-              <textarea value={editingOptionGroup.description} onChange={(e) => setEditingOptionGroup({ ...editingOptionGroup, description: e.target.value })} rows={2} className={inputClass} />
+              <textarea value={editingOptionGroup.description ?? ""} onChange={(e) => setEditingOptionGroup({ ...editingOptionGroup, description: e.target.value })} rows={2} className={inputClass} />
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={editingOptionGroup.isRequired} onChange={(e) => setEditingOptionGroup({ ...editingOptionGroup, isRequired: e.target.checked })} className="w-4 h-4" />
@@ -535,7 +681,7 @@ export function AdminCatalogPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setEditingOptionGroup(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveOptionGroup} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80">Save</button>
+              <button onClick={handleSaveOptionGroup} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
             </div>
           </div>
         )}
@@ -559,7 +705,7 @@ export function AdminCatalogPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
-              <textarea value={editingOption.description} onChange={(e) => setEditingOption({ ...editingOption, description: e.target.value })} rows={2} className={inputClass} />
+              <textarea value={editingOption.description ?? ""} onChange={(e) => setEditingOption({ ...editingOption, description: e.target.value })} rows={2} className={inputClass} />
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Price Modifier (฿)</label>
@@ -567,7 +713,7 @@ export function AdminCatalogPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setEditingOption(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveOption} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80">Save</button>
+              <button onClick={handleSaveOption} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
             </div>
           </div>
         )}

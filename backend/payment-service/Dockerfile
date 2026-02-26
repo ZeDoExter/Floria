@@ -3,12 +3,13 @@ WORKDIR /usr/src/app
 
 FROM base AS deps
 COPY backend/shared ./backend/shared
+RUN cd backend/shared && npm install && npm run build
 COPY backend/payment-service/package.json backend/payment-service/package-lock.json* ./backend/payment-service/
 RUN cd backend/payment-service && npm install
 
 FROM base AS builder
 COPY --from=deps /usr/src/app/backend/payment-service/node_modules ./backend/payment-service/node_modules
-COPY backend/shared ./backend/shared
+COPY --from=deps /usr/src/app/backend/shared ./backend/shared
 COPY backend/payment-service ./backend/payment-service
 RUN cd backend/payment-service && npm run build
 
@@ -16,7 +17,7 @@ FROM base AS runner
 ENV NODE_ENV=production
 RUN apk add --no-cache openssl
 
-COPY backend/shared ./backend/shared
+COPY --from=deps /usr/src/app/backend/shared ./backend/shared
 COPY backend/payment-service/package.json backend/payment-service/package-lock.json* ./backend/payment-service/
 RUN cd backend/payment-service && npm install --omit=dev && npm cache clean --force
 

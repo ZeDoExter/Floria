@@ -1,5 +1,12 @@
 import { DefaultService } from './index';
 
+const unwrapApiData = <T>(response: any): T => {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return response.data as T;
+  }
+  return response as T;
+};
+
 export type DirectoryUser = {
   email: string;
   displayName: string;
@@ -23,8 +30,7 @@ export type UserProfile = {
 
 export const fetchDirectory = async (token: string) => {
   const response = await DefaultService.usersControllerList();
-
-  const payload = response.data?.users;
+  const payload = unwrapApiData<DirectoryResponse>(response)?.users;
   if (!Array.isArray(payload)) {
     return [] as DirectoryUser[];
   }
@@ -37,5 +43,5 @@ export const fetchDirectory = async (token: string) => {
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
   const response = await DefaultService.usersControllerGetUser(userId);
-  return response.data;
+  return unwrapApiData<UserProfile>(response);
 };

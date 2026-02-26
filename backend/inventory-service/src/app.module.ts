@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { validate } from './env.validation.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogModule } from './modules/catalog/catalog.module.js';
-import { Category } from './entities/category.entity';
-import { Product } from './entities/product.entity';
-import { OptionGroup } from './entities/option-group.entity';
-import { Option } from './entities/option.entity';
+import { Category } from './entities/category.entity.js';
+import { Product } from './entities/product.entity.js';
+import { OptionGroup } from './entities/option-group.entity.js';
+import { Option } from './entities/option.entity.js';
 import { HealthModule } from 'floria-shared';
 
 @Module({

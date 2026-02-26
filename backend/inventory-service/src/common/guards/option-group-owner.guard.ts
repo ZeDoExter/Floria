@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OptionGroup } from '../../entities/option-group.entity';
+import { OptionGroup } from '../../entities/option-group.entity.js';
 
 @Injectable()
 export class OptionGroupOwnerGuard implements CanActivate {

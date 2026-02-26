@@ -39,19 +39,26 @@ export interface RegisterData {
   lastName?: string;
 }
 
+const unwrapApiData = <T>(response: any): T => {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return response.data as T;
+  }
+  return response as T;
+};
+
 export const loginRequest = async (credentials: Credentials): Promise<AuthResponse> => {
-  const data = await DefaultService.authControllerLogin(credentials);
-  return data.data; // NestJS global interceptor shape: { statusCode, message, data }
+  const response = await DefaultService.authControllerLogin(credentials);
+  return unwrapApiData<AuthResponse>(response);
 };
 
 export const registerRequest = async (data: RegisterData): Promise<AuthResponse> => {
-  const responseData = await DefaultService.authControllerRegister(data);
-  return responseData.data;
+  const response = await DefaultService.authControllerRegister(data);
+  return unwrapApiData<AuthResponse>(response);
 };
 
 export const fetchProfile = async (token: string) => {
   // Token is automatically injected by OpenAPI.TOKEN config, so we don't strictly need to pass it here,
   // but we keep the parameter for backwards compatibility.
-  const data = await DefaultService.authControllerProfile();
-  return data.data;
+  const response = await DefaultService.authControllerProfile();
+  return unwrapApiData(response);
 };

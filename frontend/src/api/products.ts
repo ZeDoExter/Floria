@@ -1,5 +1,12 @@
 import { DefaultService } from './index';
 
+const unwrapApiData = <T>(response: any): T => {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return response.data as T;
+  }
+  return response as T;
+};
+
 export interface ProductSummary {
   id: string;
   name: string;
@@ -63,7 +70,10 @@ export const fetchProducts = async (filterByOwner = false): Promise<ProductSumma
   // DefaultService limits us to defined openapi params. If the backend doesn't define filterByOwner in swagger, we can't pass it easily via Codegen.
   // Assuming the backend still reads it or we just ignore it for now.
   const response = await DefaultService.productsControllerList();
-  let data = response.data as any[];
+  let data = unwrapApiData<any[]>(response);
+  if (!Array.isArray(data)) {
+    data = [];
+  }
   // Fallback frontend filter if the backend didn't do it due to missing param pass
   if (filterByOwner) {
     // We would need the current user ID to filter by owner, so this is a bit broken if not passed to backend.
@@ -73,5 +83,5 @@ export const fetchProducts = async (filterByOwner = false): Promise<ProductSumma
 
 export const fetchProductDetail = async (productId: string): Promise<ProductDetail> => {
   const response = await DefaultService.productsControllerDetail(productId);
-  return normalizeProductDetail(response.data);
+  return normalizeProductDetail(unwrapApiData(response));
 };
