@@ -90,5 +90,13 @@ export interface SerializedOrderDetail {
     createdAt: Date;
     notes: string | null;
     deliveryDate: Date | null;
+    items?: Array<{
+      id: string;
+      productId: string;
+      productName: string;
+      quantity: number;
+      unitPrice: number;
+      optionSnapshot: any;
+    }>;
   };
 }

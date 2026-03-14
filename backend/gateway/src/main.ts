@@ -2,9 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: false });
+  const app = await NestFactory.create(AppModule, {
+    cors: false,
+    rawBody: true
+  });
   const configService = app.get(ConfigService);
 
   const corsOrigin = configService.get('CORS_ORIGIN') || 'http://localhost:4173';
@@ -22,6 +26,15 @@ async function bootstrap() {
       transform: true
     })
   );
+
+  const config = new DocumentBuilder()
+    .setTitle('Floria API Gateway')
+    .setDescription('The API description for Floria e-commerce platform')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   const port = configService.get('PORT') || 3000;
   await app.listen(port);

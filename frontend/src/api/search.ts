@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+import { DefaultService } from './index';
 
 export interface SearchProductResult {
   id: string;
@@ -22,10 +20,6 @@ export const searchProducts = async (query: string): Promise<SearchProductResult
     return [];
   }
 
-  const response = await axios.get<SearchResponse>(`${API_BASE_URL}/search/products`, {
-    params: { q: query },
-    withCredentials: true
-  });
-
+  const response = await DefaultService.searchControllerSearchProducts(query);
   return response.data.results;
 };

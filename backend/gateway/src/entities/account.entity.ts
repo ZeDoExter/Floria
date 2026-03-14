@@ -7,7 +7,7 @@ import {
   OneToOne,
   Relation
 } from 'typeorm';
-import { User } from './user.entity';
+import { User } from './user.entity.js';
 
 @Entity()
 export class Account {

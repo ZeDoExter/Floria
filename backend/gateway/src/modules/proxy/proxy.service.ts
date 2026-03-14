@@ -22,10 +22,10 @@ export class ProxyService {
 
   constructor(private readonly http: HttpService, configService: ConfigService) {
     this.serviceUrls = {
-      product: configService.get<string>('PRODUCT_SERVICE_URL', 'http://product-service:3001'),
+      inventory: configService.get<string>('INVENTORY_SERVICE_URL', 'http://inventory-service:3001'),
       cart: configService.get<string>('CART_SERVICE_URL', 'http://cart-service:3002'),
       order: configService.get<string>('ORDER_SERVICE_URL', 'http://order-service:3003'),
-      search: configService.get<string>('SEARCH_SERVICE_URL', 'http://search-service:3004')
+      payment: configService.get<string>('PAYMENT_SERVICE_URL', 'http://payment-service:3005')
     };
   }
 
@@ -66,7 +66,7 @@ export class ProxyService {
       if (context.user.role) {
         headers['x-user-role'] = context.user.role;
       }
-      
+
       // Debug logging for PATCH requests to orders
       if (method === 'patch' && path.includes('/orders/') && path.includes('/status')) {
         console.log('=== Gateway Proxy Debug ===');

@@ -1,4 +1,6 @@
-import { apiClient } from './client';
+import { DefaultService } from './index';
+import { request as __request } from './core/request';
+import { OpenAPI } from './core/OpenAPI';
 import { CartItemInput } from './cart';
 
 export const ORDER_STATUS_OPTIONS = [
@@ -54,49 +56,40 @@ const normalizeOrder = (order: any): OrderResponse => ({
 });
 
 export const submitOrder = async (payload: CheckoutPayload, token: string) => {
-  const response = await apiClient.post('/orders', payload, {
-    headers: { Authorization: `Bearer ${token}` }
+  const response = await __request(OpenAPI, {
+    method: 'POST',
+    url: '/orders',
+    body: payload,
   });
-
-  const order = (response.data as { order?: unknown })?.order;
-  return normalizeOrder(order ?? response.data);
+  const order = (response as any)?.order;
+  return normalizeOrder(order ?? response);
 };
 
 export const fetchOrders = async (token: string) => {
-  const response = await apiClient.get('/orders', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
+  const response = await DefaultService.ordersControllerList();
   const orders = (response.data as { orders?: unknown })?.orders;
   if (!Array.isArray(orders)) {
     return [];
   }
-
   return orders.map(normalizeOrder);
 };
 
 export const fetchCustomerOrders = async (token: string) => {
-  const response = await apiClient.get('/orders/customer-orders', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
+  const response = await DefaultService.ordersControllerListCustomerOrders();
   const orders = (response.data as { orders?: unknown })?.orders;
   if (!Array.isArray(orders)) {
     return [];
   }
-
   return orders.map(normalizeOrder);
 };
 
 export const updateOrderStatus = async (orderId: string, status: OrderStatus, token: string) => {
-  const response = await apiClient.patch(
-    `/orders/${orderId}/status`,
-    { status },
-    {
-      headers: { Authorization: `Bearer ${token}` }
-    }
-  );
-
-  const order = (response.data as { order?: unknown })?.order ?? response.data;
+  // Pass the order handler
+  const response = await __request(OpenAPI, {
+    method: 'PATCH',
+    url: `/orders/${orderId}/status`,
+    body: { status }
+  });
+  const order = (response as any)?.order ?? response;
   return normalizeOrder(order);
 };

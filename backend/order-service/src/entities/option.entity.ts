@@ -4,7 +4,7 @@ import {
   Relation, JoinColumn
 } from 'typeorm';
 
-import { OptionGroup } from './option-group.entity';
+import { OptionGroup } from './option-group.entity.js';
 
 @Entity()
 export class Option {

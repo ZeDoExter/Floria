@@ -19,8 +19,8 @@ resource "aws_cloudwatch_log_group" "gateway" {
   retention_in_days = 7
 }
 
-resource "aws_cloudwatch_log_group" "product_service" {
-  name              = "/ecs/${var.project_name}/product-service"
+resource "aws_cloudwatch_log_group" "inventory_service" {
+  name              = "/ecs/${var.project_name}/inventory-service"
   retention_in_days = 7
 }
 
@@ -34,8 +34,8 @@ resource "aws_cloudwatch_log_group" "order_service" {
   retention_in_days = 7
 }
 
-resource "aws_cloudwatch_log_group" "search_service" {
-  name              = "/ecs/${var.project_name}/search-service"
+resource "aws_cloudwatch_log_group" "payment_service" {
+  name              = "/ecs/${var.project_name}/payment-service"
   retention_in_days = 7
 }
 
@@ -104,10 +104,10 @@ resource "aws_ecs_task_definition" "gateway" {
       { name = "POSTGRES_PORT", value = "5432" },
       { name = "POSTGRES_USER", value = var.db_username },
       { name = "POSTGRES_DB", value = "floratailor" },
-      { name = "PRODUCT_SERVICE_URL", value = "http://product-service.local:3001" },
+      { name = "INVENTORY_SERVICE_URL", value = "http://inventory-service.local:3001" },
       { name = "CART_SERVICE_URL", value = "http://cart-service.local:3002" },
       { name = "ORDER_SERVICE_URL", value = "http://order-service.local:3003" },
-      { name = "SEARCH_SERVICE_URL", value = "http://search-service.local:3004" },
+      { name = "PAYMENT_SERVICE_URL", value = "http://payment-service.local:3005" },
       { name = "CORS_ORIGIN", value = "https://${var.cloudfront_domain_name}" }
     ]
 
@@ -127,8 +127,8 @@ resource "aws_ecs_task_definition" "gateway" {
   }])
 }
 
-resource "aws_ecs_task_definition" "product_service" {
-  family                   = "${var.project_name}-product-service"
+resource "aws_ecs_task_definition" "inventory_service" {
+  family                   = "${var.project_name}-inventory-service"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
@@ -136,8 +136,8 @@ resource "aws_ecs_task_definition" "product_service" {
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
 
   container_definitions = jsonencode([{
-    name  = "product-service"
-    image = "${var.product_service_repository_url}:latest"
+    name  = "inventory-service"
+    image = "${var.inventory_service_repository_url}:latest"
 
     portMappings = [{
       containerPort = 3001
@@ -160,7 +160,7 @@ resource "aws_ecs_task_definition" "product_service" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.product_service.name
+        "awslogs-group"         = aws_cloudwatch_log_group.inventory_service.name
         "awslogs-region"        = var.aws_region
         "awslogs-stream-prefix" = "ecs"
       }
@@ -250,8 +250,8 @@ resource "aws_ecs_task_definition" "order_service" {
   }])
 }
 
-resource "aws_ecs_task_definition" "search_service" {
-  family                   = "${var.project_name}-search-service"
+resource "aws_ecs_task_definition" "payment_service" {
+  family                   = "${var.project_name}-payment-service"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
@@ -259,16 +259,16 @@ resource "aws_ecs_task_definition" "search_service" {
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
 
   container_definitions = jsonencode([{
-    name  = "search-service"
-    image = "${var.search_service_repository_url}:latest"
+    name  = "payment-service"
+    image = "${var.payment_service_repository_url}:latest"
 
     portMappings = [{
-      containerPort = 3004
+      containerPort = 3005
       protocol      = "tcp"
     }]
 
     environment = [
-      { name = "PORT", value = "3004" },
+      { name = "PORT", value = "3005" },
       { name = "NODE_ENV", value = "production" },
       { name = "POSTGRES_HOST", value = var.db_address },
       { name = "POSTGRES_PORT", value = "5432" },
@@ -283,7 +283,7 @@ resource "aws_ecs_task_definition" "search_service" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.search_service.name
+        "awslogs-group"         = aws_cloudwatch_log_group.payment_service.name
         "awslogs-region"        = var.aws_region
         "awslogs-stream-prefix" = "ecs"
       }
@@ -312,10 +312,10 @@ resource "aws_ecs_service" "gateway" {
   }
 }
 
-resource "aws_ecs_service" "product_service" {
-  name            = "${var.project_name}-product-service"
+resource "aws_ecs_service" "inventory_service" {
+  name            = "${var.project_name}-inventory-service"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.product_service.arn
+  task_definition = aws_ecs_task_definition.inventory_service.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
@@ -326,7 +326,7 @@ resource "aws_ecs_service" "product_service" {
   }
 
   service_registries {
-    registry_arn = aws_service_discovery_service.product_service.arn
+    registry_arn = aws_service_discovery_service.inventory_service.arn
   }
 }
 
@@ -366,10 +366,10 @@ resource "aws_ecs_service" "order_service" {
   }
 }
 
-resource "aws_ecs_service" "search_service" {
-  name            = "${var.project_name}-search-service"
+resource "aws_ecs_service" "payment_service" {
+  name            = "${var.project_name}-payment-service"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.search_service.arn
+  task_definition = aws_ecs_task_definition.payment_service.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
@@ -380,7 +380,7 @@ resource "aws_ecs_service" "search_service" {
   }
 
   service_registries {
-    registry_arn = aws_service_discovery_service.search_service.arn
+    registry_arn = aws_service_discovery_service.payment_service.arn
   }
 }
 
@@ -390,8 +390,8 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
   vpc  = var.vpc_id
 }
 
-resource "aws_service_discovery_service" "product_service" {
-  name = "product-service"
+resource "aws_service_discovery_service" "inventory_service" {
+  name = "inventory-service"
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.main.id
@@ -441,8 +441,8 @@ resource "aws_service_discovery_service" "order_service" {
   }
 }
 
-resource "aws_service_discovery_service" "search_service" {
-  name = "search-service"
+resource "aws_service_discovery_service" "payment_service" {
+  name = "payment-service"
 
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.main.id

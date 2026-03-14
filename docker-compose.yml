@@ -14,9 +14,18 @@ services:
     networks:
       - floratailor-network
 
-  product-service:
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    networks:
+      - floratailor-network
+
+  inventory-service:
     build:
-      context: ./backend/product-service
+      context: .
+      dockerfile: backend/inventory-service/Dockerfile
     environment:
       PORT: 3001
       NODE_ENV: development
@@ -33,25 +42,24 @@ services:
 
   cart-service:
     build:
-      context: ./backend/cart-service
+      context: .
+      dockerfile: backend/cart-service/Dockerfile
     environment:
       NODE_ENV: development
       PORT: 3002
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: flora
-      POSTGRES_PASSWORD: flora
-      POSTGRES_DB: floratailor
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       GATEWAY_URL: http://gateway:3000
       CORS_ORIGIN: http://localhost:4173
     depends_on:
-      - postgres
+      - redis
     networks:
       - floratailor-network
 
   order-service:
     build:
-      context: ./backend/order-service
+      context: .
+      dockerfile: backend/order-service/Dockerfile
     environment:
       PORT: 3003
       POSTGRES_HOST: postgres
@@ -66,45 +74,46 @@ services:
     networks:
       - floratailor-network
 
-  search-service:
+  payment-service:
     build:
-      context: ./backend/search-service
+      context: .
+      dockerfile: backend/payment-service/Dockerfile
     environment:
-      PORT: 3004
+      PORT: 3005
       NODE_ENV: development
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: flora
-      POSTGRES_PASSWORD: flora
-      POSTGRES_DB: floratailor
-      GATEWAY_URL: http://gateway:3000
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_fake}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_test_fake}
+      ORDER_SERVICE_URL: http://order-service:3003
+      CORS_ORIGIN: http://localhost:4173
     depends_on:
-      - postgres
+      - order-service
     networks:
       - floratailor-network
 
   gateway:
     build:
-      context: ./backend/gateway
+      context: .
+      dockerfile: backend/gateway/Dockerfile
     environment:
       PORT: 3000
       NODE_ENV: development
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: flora
-      POSTGRES_PASSWORD: flora
-      POSTGRES_DB: floratailor
       JWT_SECRET: super-secret-local-key
       CORS_ORIGIN: http://localhost:4173
-      PRODUCT_SERVICE_URL: http://product-service:3001
+      INVENTORY_SERVICE_URL: http://inventory-service:3001
       CART_SERVICE_URL: http://cart-service:3002
       ORDER_SERVICE_URL: http://order-service:3003
-      SEARCH_SERVICE_URL: http://search-service:3004
+      PAYMENT_SERVICE_URL: http://payment-service:3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: flora
+      DB_PASSWORD: flora
+      DB_NAME: floratailor
     depends_on:
-      - product-service
+      - inventory-service
       - cart-service
       - order-service
-      - search-service
+      - payment-service
+      - postgres
     ports:
       - '3000:3000'
     networks:
@@ -126,7 +135,7 @@ services:
 
 volumes:
   postgres-data:
-  pgadmin-data:
+
 
 networks:
   floratailor-network:

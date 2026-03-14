@@ -27,7 +27,7 @@ Write-Host "`n[2/6] Logging in to ECR..." -ForegroundColor Yellow
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_BASE
 
 Write-Host "`n[3/6] Building and pushing backend services..." -ForegroundColor Yellow
-$services = @("gateway", "product-service", "cart-service", "order-service", "search-service")
+$services = @("gateway", "inventory-service", "cart-service", "order-service", "payment-service")
 
 foreach ($service in $services) {
     Write-Host "  -> Building $service..." -ForegroundColor Cyan

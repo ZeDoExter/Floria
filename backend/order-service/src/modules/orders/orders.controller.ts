@@ -25,6 +25,14 @@ export class OrdersController {
     return this.ordersService.listCustomerOrders(userId, userEmail);
   }
 
+  @Get(':orderId')
+  getOrderDetail(
+    @Headers('x-user-id') userId: string | undefined,
+    @Param('orderId') orderId: string
+  ) {
+    return this.ordersService.getOrderDetail(userId, orderId);
+  }
+
   @Post()
   create(@Headers('x-user-id') userId: string | undefined, @Body() dto: CreateOrderDto) {
     return this.ordersService.createOrder(userId, dto);

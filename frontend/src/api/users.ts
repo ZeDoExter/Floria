@@ -1,4 +1,11 @@
-import { apiClient } from './client';
+import { DefaultService } from './index';
+
+const unwrapApiData = <T>(response: any): T => {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return response.data as T;
+  }
+  return response as T;
+};
 
 export type DirectoryUser = {
   email: string;
@@ -22,22 +29,19 @@ export type UserProfile = {
 };
 
 export const fetchDirectory = async (token: string) => {
-  const response = await apiClient.get<DirectoryResponse>('/admin/users', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  const payload = response.data?.users;
+  const response = await DefaultService.usersControllerList();
+  const payload = unwrapApiData<DirectoryResponse>(response)?.users;
   if (!Array.isArray(payload)) {
     return [] as DirectoryUser[];
   }
 
-  return payload.map((user) => ({
+  return payload.map((user: any) => ({
     ...user,
     capabilities: Array.isArray(user.capabilities) ? user.capabilities : []
   }));
 };
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
-  const response = await apiClient.get(`/users/${userId}`);
-  return response.data;
+  const response = await DefaultService.usersControllerGetUser(userId);
+  return unwrapApiData<UserProfile>(response);
 };

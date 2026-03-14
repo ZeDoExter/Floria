@@ -10,6 +10,7 @@ export interface OptionGroupWithOptions {
 
 export interface ProductWithOptionGroups {
   id: string;
+  name: string;
   basePrice: number;
   optionGroups?: OptionGroupWithOptions[];
 }

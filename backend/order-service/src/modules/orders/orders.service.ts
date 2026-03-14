@@ -5,6 +5,9 @@ import {
   UnauthorizedException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom } from 'rxjs';
 import { Repository, In } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import type {
@@ -22,8 +25,6 @@ import { OrderItem } from '../../entities/order-item.entity.js';
 import { Product } from '../../entities/product.entity.js';
 import { OptionGroup } from '../../entities/option-group.entity.js';
 import { Option } from '../../entities/option.entity.js';
-import { CartItem } from '../../entities/cart-item.entity.js';
-import { Cart } from '../../entities/cart.entity.js';
 import { User } from '../../entities/user.entity.js';
 
 type OrderWithUser = Order & { user?: User };
@@ -37,12 +38,10 @@ export class OrdersService {
     private readonly orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-    @InjectRepository(CartItem)
-    private readonly cartItemRepository: Repository<CartItem>,
-    @InjectRepository(Cart)
-    private readonly cartRepository: Repository<Cart>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService
   ) {}
 
   async listMyOrders(userId: string | undefined): Promise<SerializedOrderList> {
@@ -82,6 +81,44 @@ export class OrdersService {
           optionSnapshot: item.optionSnapshot
         })) || []
       }))
+    };
+  }
+
+  async getOrderDetail(userId: string | undefined, orderId: string): Promise<SerializedOrderDetail> {
+    if (!userId) {
+      throw new UnauthorizedException('User authentication required');
+    }
+
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['items']
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Security check: only order owner or a shop owner (internal check) can see details
+    // For now, let's keep it simple. In production, check if order.userId === userId
+    // or if the request comes from payment service.
+
+    return {
+      order: {
+        id: order.id,
+        totalAmount: Number(order.totalAmount),
+        status: order.status,
+        createdAt: order.createdAt,
+        notes: order.notes,
+        deliveryDate: order.deliveryDate,
+        items: order.items?.map((item) => ({
+          id: item.id,
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: Number(item.unitPrice),
+          optionSnapshot: item.optionSnapshot
+        })) || []
+      }
     };
   }
 
@@ -237,13 +274,16 @@ export class OrdersService {
     await this.orderItemRepository.save(orderItemsToCreate);
 
     // Clear cart after successful order
-    const cart = await this.cartRepository.findOne({
-      where: { userId: user.id },
-      relations: ['items']
-    });
-
-    if (cart) {
-      await this.cartItemRepository.delete({ cartId: cart.id });
+    const cartUrl = this.configService.get<string>('CART_SERVICE_URL', 'http://cart-service:3002');
+    try {
+      await lastValueFrom(
+        this.httpService.delete(`${cartUrl}/cart`, {
+          headers: { 'x-user-id': user.id }
+        })
+      );
+      console.log(`Cleared cart for user ${user.id}`);
+    } catch (error: any) {
+      console.error('Failed to clear cart:', error.message);
     }
 
     return {

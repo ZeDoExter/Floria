@@ -41,4 +41,12 @@ export class CartController {
   ) {
     return this.cartService.removeItem(userId, anonymousId, id);
   }
+
+  @Delete()
+  clearCart(
+    @Headers('x-user-id') userId?: string,
+    @Query('anonymousId') anonymousId?: string
+  ) {
+    return this.cartService.clearCart(userId, anonymousId);
+  }
 }

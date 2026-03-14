@@ -1,273 +1,385 @@
-// seed-all.js - Script รวมสำหรับ seed ทุกอย่างในคำสั่งเดียว
 const fs = require('fs');
+const path = require('path');
 const http = require('http');
-const { exec } = require('child_process');
-const util = require('util');
-const execPromise = util.promisify(exec);
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 
-function apiRequest(method, path, data, token) {
+function getErrorMessage(parsedBody) {
+  if (!parsedBody) return 'Unknown error';
+  if (typeof parsedBody === 'string') return parsedBody;
+  if (Array.isArray(parsedBody.message)) return parsedBody.message.join(', ');
+  if (typeof parsedBody.message === 'string') return parsedBody.message;
+  return JSON.stringify(parsedBody);
+}
+
+function normalizeListResponse(response) {
+  if (Array.isArray(response)) return response;
+  if (response?.data && Array.isArray(response.data)) return response.data;
+  return [];
+}
+
+function apiRequest(method, endpoint, data, token) {
   return new Promise((resolve, reject) => {
-    const url = new URL(API_BASE + path);
+    const url = new URL(API_BASE + endpoint);
     const options = {
       hostname: url.hostname,
       port: url.port || 80,
-      path: url.pathname,
-      method: method,
+      path: `${url.pathname}${url.search}`,
+      method,
       headers: { 'Content-Type': 'application/json' }
     };
 
-    if (token) options.headers['Authorization'] = `Bearer ${token}`;
+    if (token) {
+      options.headers.Authorization = `Bearer ${token}`;
+    }
 
     const req = http.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => body += chunk);
+      let rawBody = '';
+      res.on('data', (chunk) => {
+        rawBody += chunk;
+      });
       res.on('end', () => {
-        try {
-          const response = JSON.parse(body);
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve(response);
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+        let parsedBody = null;
+        if (rawBody) {
+          try {
+            parsedBody = JSON.parse(rawBody);
+          } catch {
+            parsedBody = rawBody;
           }
-        } catch (e) {
-          reject(new Error(`Failed to parse response: ${body}`));
         }
+
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(parsedBody);
+          return;
+        }
+
+        const error = new Error(`HTTP ${res.statusCode}: ${getErrorMessage(parsedBody)}`);
+        error.statusCode = res.statusCode;
+        error.response = parsedBody;
+        reject(error);
       });
     });
 
     req.on('error', reject);
-    if (data) req.write(JSON.stringify(data));
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
     req.end();
   });
 }
 
-async function main() {
-  console.log('🌸 Flora Tailor - Complete Seed Script\n');
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  // STEP 0: Restart services
-  console.log('🔧 Step 1: Restarting services to sync database...\n');
+function isTransientNetworkError(error) {
+  const msg = String(error?.message || '');
+  return msg.includes('ECONNRESET')
+    || msg.includes('ECONNREFUSED')
+    || msg.includes('ETIMEDOUT')
+    || msg.includes('socket hang up')
+    || msg.includes('ENOTFOUND');
+}
+
+async function apiRequestWithRetry(method, endpoint, data, token, maxRetries = 3) {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      return await apiRequest(method, endpoint, data, token);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientNetworkError(error) || attempt === maxRetries) {
+        throw error;
+      }
+      const delay = 500 * (attempt + 1);
+      console.log(`   ↻ retry ${attempt + 1}/${maxRetries} ${method} ${endpoint} in ${delay}ms (${error.message})`);
+      await wait(delay);
+    }
+  }
+  throw lastError;
+}
+
+function normalizeName(value) {
+  return (value || '').trim().toLowerCase();
+}
+
+function findByName(list, name) {
+  const target = normalizeName(name);
+  return list.find((item) => normalizeName(item?.name) === target);
+}
+
+async function registerOrLoginAccount(account, summary) {
+  let alreadyExists = false;
+
   try {
-    await execPromise('docker-compose restart gateway cart-service');
-    console.log('   ✓ Services restarted');
-    console.log('   ⏳ Waiting 15 seconds...\n');
-    await new Promise(resolve => setTimeout(resolve, 15000));
+    await apiRequestWithRetry('POST', '/auth/register', {
+      email: account.email,
+      password: account.password,
+      firstName: account.firstName,
+      lastName: account.lastName
+    });
+    summary.accounts.created += 1;
+    console.log(`   ✓ ${account.email} (created)`);
   } catch (error) {
-    console.log('   ⚠️  Could not restart services');
-    console.log('   Run: docker-compose restart gateway cart-service\n');
+    if (String(error.message).includes('already registered')) {
+      alreadyExists = true;
+      summary.accounts.existing += 1;
+      console.log(`   • ${account.email} (exists)`);
+    } else {
+      summary.accounts.failed += 1;
+      console.log(`   ✗ ${account.email} (${error.message})`);
+      throw error;
+    }
   }
 
-  // STEP 1: สร้าง Accounts
-  console.log('� Steep 2: Creating accounts...\n');
+  const login = await apiRequestWithRetry('POST', '/auth/login', {
+    email: account.email,
+    password: account.password
+  });
+
+  if (!alreadyExists) {
+    return login?.token;
+  }
+
+  return login?.token;
+}
+
+async function main() {
+  console.log('🌸 Flora Tailor - Initial Seed (Idempotent)\n');
+  console.log(`🔗 API Base: ${API_BASE}\n`);
+
+  const summary = {
+    accounts: { created: 0, existing: 0, failed: 0 },
+    categories: { created: 0, existing: 0, failed: 0 },
+    products: { created: 0, existing: 0, failed: 0 },
+    optionGroups: { created: 0, existing: 0, failed: 0 },
+    options: { created: 0, existing: 0, failed: 0 }
+  };
+
   const accounts = [
-    { email: 'flora.owner1@example.com', password: 'secret123', firstName: 'Main Shop', lastName: 'Owner', role: 'owner' },
-    { email: 'flora.owner2@example.com', password: 'secret123', firstName: 'Weekend Market', lastName: 'Owner', role: 'owner' },
-    { email: 'flora.customer1@example.com', password: 'secret123', firstName: 'Loyal', lastName: 'Customer', role: 'customer' },
-    { email: 'flora.customer2@example.com', password: 'secret123', firstName: 'Guest', lastName: 'Customer', role: 'customer' }
+    { email: 'flora.owner1@example.com', password: 'secret123', firstName: 'Main Shop', lastName: 'Owner' },
+    { email: 'flora.owner2@example.com', password: 'secret123', firstName: 'Weekend Market', lastName: 'Owner' },
+    { email: 'flora.customer1@example.com', password: 'secret123', firstName: 'Loyal', lastName: 'Customer' },
+    { email: 'flora.customer2@example.com', password: 'secret123', firstName: 'Guest', lastName: 'Customer' }
   ];
 
+  console.log('👤 Step 1: Ensure demo accounts exist...\n');
+  const accountTokens = new Map();
   for (const account of accounts) {
-    try {
-      await apiRequest('POST', '/auth/register', account);
-      console.log(`   ✓ ${account.email}`);
-    } catch (error) {
-      if (error.message.includes('already registered')) {
-        console.log(`   ⚠️  ${account.email} (exists)`);
-      } else {
-        console.log(`   ✗ ${account.email}`);
-      }
+    const token = await registerOrLoginAccount(account, summary);
+    if (token) {
+      accountTokens.set(account.email, token);
     }
   }
-  console.log('');
 
-  // STEP 2: Update roles
-  console.log('🔑 Step 3: Setting roles...\n');
-  console.log('   ⏳ Waiting 2 seconds for accounts to be ready...\n');
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  try {
-    const result = await execPromise(
-      `docker exec floratailor-postgres-1 psql -U flora -d floratailor -c "UPDATE account SET role = 'owner' WHERE email IN ('flora.owner1@example.com', 'flora.owner2@example.com'); SELECT email, role FROM account WHERE email LIKE 'flora.%' ORDER BY email;"`
-    );
-    console.log('   ✓ Roles updated');
-    console.log(result.stdout);
-  } catch (error) {
-    console.log('   ⚠️  Could not update roles');
-    console.log('   Error:', error.message);
-    console.log('   Please run manually:');
-    console.log('   docker exec floratailor-postgres-1 psql -U flora -d floratailor -c "UPDATE account SET role = \'owner\' WHERE email IN (\'flora.owner1@example.com\', \'flora.owner2@example.com\');"');
-    console.log('');
+  const token1 = accountTokens.get('flora.owner1@example.com');
+  const token2 = accountTokens.get('flora.owner2@example.com');
+
+  if (!token1 || !token2) {
+    throw new Error('Owner login failed. Cannot continue seeding catalog data.');
   }
 
-  // STEP 3: Login as both owners
-  console.log('🔐 Step 4: Login as owners...\n');
-  let token1, token2;
-  try {
-    const login1 = await apiRequest('POST', '/auth/login', {
-      email: 'flora.owner1@example.com',
-      password: 'secret123'
-    });
-    token1 = login1.token;
-    console.log('   ✓ Owner 1 logged in');
+  console.log('\n📖 Step 2: Read mockup data...\n');
+  const mockupPath = path.join(__dirname, 'mockup-data.json');
+  const mockupData = JSON.parse(fs.readFileSync(mockupPath, 'utf-8'));
+  console.log(`   ✓ ${mockupData.categories.length} categories in mockup`);
+  console.log(`   ✓ ${mockupData.products.length} products in mockup`);
+  console.log(`   ✓ ${mockupData.optionGroups.length} option groups in mockup`);
+  console.log(`   ✓ ${mockupData.options.length} options in mockup\n`);
 
-    const login2 = await apiRequest('POST', '/auth/login', {
-      email: 'flora.owner2@example.com',
-      password: 'secret123'
-    });
-    token2 = login2.token;
-    console.log('   ✓ Owner 2 logged in\n');
-  } catch (error) {
-    console.error('   ✗ Login failed:', error.message);
-    console.log('\n💡 Make sure Docker is running: docker-compose up -d\n');
-    process.exit(1);
-  }
-
-  // STEP 4: Read mockup
-  console.log('📖 Step 5: Reading mockup data...\n');
-  let mockupData;
-  try {
-    mockupData = JSON.parse(fs.readFileSync('mockup-data.json', 'utf-8'));
-    console.log(`   ✓ ${mockupData.categories.length} categories`);
-    console.log(`   ✓ ${mockupData.products.length} products`);
-    console.log(`   ✓ ${mockupData.optionGroups.length} option groups`);
-    console.log(`   ✓ ${mockupData.options.length} options\n`);
-  } catch (error) {
-    console.error('   ✗ Failed to read mockup-data.json\n');
-    process.exit(1);
-  }
-
-  // STEP 5: Categories (ใช้ owner1 สร้าง)
-  console.log('🏷️  Step 6: Creating categories...\n');
+  console.log('🏷️  Step 3: Ensure categories exist...\n');
   const categoryMap = new Map();
-  for (const cat of mockupData.categories) {
+  const existingCategories = normalizeListResponse(await apiRequestWithRetry('GET', '/categories', null, token1));
+
+  for (const category of mockupData.categories) {
+    const existing = findByName(existingCategories, category.name);
+    if (existing?.id) {
+      categoryMap.set(category.id, existing.id);
+      summary.categories.existing += 1;
+      console.log(`   • ${category.name} (exists)`);
+      continue;
+    }
+
     try {
-      const response = await apiRequest('POST', '/categories', {
-        name: cat.name,
-        description: cat.description,
-        imageUrl: cat.imageUrl
+      const created = await apiRequestWithRetry('POST', '/categories', {
+        name: category.name,
+        description: category.description,
+        imageUrl: category.imageUrl
       }, token1);
-      categoryMap.set(cat.id, response.id);
-      console.log(`   ✓ ${cat.name}`);
+      categoryMap.set(category.id, created.id);
+      existingCategories.push(created);
+      summary.categories.created += 1;
+      console.log(`   ✓ ${category.name} (created)`);
     } catch (error) {
-      console.log(`   ✗ ${cat.name}`);
+      summary.categories.failed += 1;
+      console.log(`   ✗ ${category.name} (${error.message})`);
     }
   }
-  console.log('');
 
-  // STEP 6: Products (สลับกันระหว่าง 2 owners)
-  console.log('🌸 Step 7: Creating products...\n');
+  console.log('\n🌸 Step 4: Ensure products exist...\n');
   const productMap = new Map();
-  let ownerIndex = 0;
-  for (const prod of mockupData.products) {
+  const productByName = new Map();
+  const existingProducts = normalizeListResponse(await apiRequestWithRetry('GET', '/products', null, token1));
+
+  for (const product of existingProducts) {
+    productByName.set(normalizeName(product.name), product);
+  }
+
+  for (let index = 0; index < mockupData.products.length; index += 1) {
+    const product = mockupData.products[index];
+    const existing = productByName.get(normalizeName(product.name));
+
+    if (existing?.id) {
+      productMap.set(product.id, existing.id);
+      summary.products.existing += 1;
+      console.log(`   • ${product.name} (exists)`);
+      continue;
+    }
+
+    const ownerToken = index % 2 === 0 ? token1 : token2;
+    const ownerName = index % 2 === 0 ? 'Owner 1' : 'Owner 2';
+
     try {
-      // สลับระหว่าง owner1 และ owner2
-      const currentToken = ownerIndex % 2 === 0 ? token1 : token2;
-      const ownerName = ownerIndex % 2 === 0 ? 'Owner 1' : 'Owner 2';
-      
-      const response = await apiRequest('POST', '/products', {
-        categoryId: categoryMap.get(prod.categoryId),
-        name: prod.name,
-        description: prod.description,
-        basePrice: prod.basePrice,
-        imageUrl: prod.imageUrl
-      }, currentToken);
-      productMap.set(prod.id, response.id);
-      console.log(`   ✓ ${prod.name} (${prod.basePrice} บาท) - ${ownerName}`);
-      ownerIndex++;
+      const created = await apiRequestWithRetry('POST', '/products', {
+        categoryId: categoryMap.get(product.categoryId),
+        name: product.name,
+        description: product.description,
+        basePrice: product.basePrice,
+        imageUrl: product.imageUrl
+      }, ownerToken);
+
+      const enrichedProduct = {
+        ...created,
+        optionGroups: created.optionGroups || []
+      };
+
+      productMap.set(product.id, created.id);
+      productByName.set(normalizeName(product.name), enrichedProduct);
+      summary.products.created += 1;
+      console.log(`   ✓ ${product.name} (created by ${ownerName})`);
     } catch (error) {
-      console.log(`   ✗ ${prod.name}`);
-      ownerIndex++;
+      summary.products.failed += 1;
+      console.log(`   ✗ ${product.name} (${error.message})`);
     }
   }
-  console.log('');
 
-  // STEP 7: Option Groups (ใช้ token ของ owner ที่สร้าง product นั้น)
-  console.log('📦 Step 8: Creating option groups...\n');
+  console.log('\n📦 Step 5: Ensure option groups exist...\n');
   const optionGroupMap = new Map();
-  const productOwnerMap = new Map(); // เก็บว่า product ไหนเป็นของ owner ไหน
-  
-  // สร้าง map ของ product -> owner token
-  let prodIndex = 0;
-  for (const prod of mockupData.products) {
-    const ownerToken = prodIndex % 2 === 0 ? token1 : token2;
-    productOwnerMap.set(prod.id, ownerToken);
-    prodIndex++;
-  }
-  
-  for (const og of mockupData.optionGroups) {
+  const mockupProductsById = new Map(mockupData.products.map((item) => [item.id, item]));
+
+  for (const optionGroup of mockupData.optionGroups) {
+    const productMock = mockupProductsById.get(optionGroup.productId);
+    const productReal = productMock ? productByName.get(normalizeName(productMock.name)) : null;
+
+    if (!productReal?.id) {
+      summary.optionGroups.failed += 1;
+      console.log(`   ✗ ${optionGroup.name} (product not found)`);
+      continue;
+    }
+
+    productMap.set(optionGroup.productId, productReal.id);
+
+    const existingGroups = Array.isArray(productReal.optionGroups) ? productReal.optionGroups : [];
+    const existingGroup = findByName(existingGroups, optionGroup.name);
+
+    if (existingGroup?.id) {
+      optionGroupMap.set(optionGroup.id, existingGroup.id);
+      summary.optionGroups.existing += 1;
+      console.log(`   • ${optionGroup.name} (exists)`);
+      continue;
+    }
+
     try {
-      const ownerToken = productOwnerMap.get(og.productId) || token1;
-      const response = await apiRequest('POST', '/option-groups', {
-        productId: productMap.get(og.productId),
-        name: og.name,
-        description: og.description,
-        isRequired: og.isRequired,
-        minSelect: og.minSelect,
-        maxSelect: og.maxSelect
-      }, ownerToken);
-      optionGroupMap.set(og.id, response.id);
-      console.log(`   ✓ ${og.name}`);
+      const created = await apiRequestWithRetry('POST', '/option-groups', {
+        productId: productReal.id,
+        name: optionGroup.name,
+        description: optionGroup.description,
+        isRequired: optionGroup.isRequired,
+        minSelect: optionGroup.minSelect,
+        maxSelect: optionGroup.maxSelect
+      }, token1);
+
+      optionGroupMap.set(optionGroup.id, created.id);
+      productReal.optionGroups = [...existingGroups, { ...created, options: [] }];
+      summary.optionGroups.created += 1;
+      console.log(`   ✓ ${optionGroup.name} (created)`);
     } catch (error) {
-      console.log(`   ✗ ${og.name}`);
+      summary.optionGroups.failed += 1;
+      console.log(`   ✗ ${optionGroup.name} (${error.message})`);
     }
   }
-  console.log('');
 
-  // STEP 8: Options (ใช้ token ของ owner ที่สร้าง product นั้น)
-  console.log('✨ Step 9: Creating options...\n');
-  let optionCount = 0;
-  
-  // สร้าง map ของ optionGroup -> product -> owner token
-  const optionGroupProductMap = new Map();
-  for (const og of mockupData.optionGroups) {
-    optionGroupProductMap.set(og.id, og.productId);
-  }
-  
-  for (const opt of mockupData.options) {
+  console.log('\n✨ Step 6: Ensure options exist...\n');
+  const mockupOptionGroupsById = new Map(mockupData.optionGroups.map((item) => [item.id, item]));
+
+  for (const option of mockupData.options) {
+    const mockupGroup = mockupOptionGroupsById.get(option.optionGroupId);
+    if (!mockupGroup) {
+      summary.options.failed += 1;
+      console.log(`   ✗ ${option.name} (mockup option group not found)`);
+      continue;
+    }
+
+    const productMock = mockupProductsById.get(mockupGroup.productId);
+    const productReal = productMock ? productByName.get(normalizeName(productMock.name)) : null;
+
+    if (!productReal?.id || !Array.isArray(productReal.optionGroups)) {
+      summary.options.failed += 1;
+      console.log(`   ✗ ${option.name} (product/option groups not ready)`);
+      continue;
+    }
+
+    const realOptionGroupId = optionGroupMap.get(option.optionGroupId);
+    const realOptionGroup = productReal.optionGroups.find((group) => group.id === realOptionGroupId);
+
+    if (!realOptionGroup?.id) {
+      summary.options.failed += 1;
+      console.log(`   ✗ ${option.name} (option group not found)`);
+      continue;
+    }
+
+    const existingOptions = Array.isArray(realOptionGroup.options) ? realOptionGroup.options : [];
+    const existingOption = findByName(existingOptions, option.name);
+
+    if (existingOption?.id) {
+      summary.options.existing += 1;
+      console.log(`   • ${option.name} (exists)`);
+      continue;
+    }
+
     try {
-      const productId = optionGroupProductMap.get(opt.optionGroupId);
-      const ownerToken = productOwnerMap.get(productId) || token1;
-      
-      await apiRequest('POST', '/options', {
-        optionGroupId: optionGroupMap.get(opt.optionGroupId),
-        name: opt.name,
-        description: opt.description,
-        priceModifier: opt.priceModifier
-      }, ownerToken);
-      optionCount++;
-      const priceText = opt.priceModifier > 0 ? `+${opt.priceModifier}` : opt.priceModifier < 0 ? `${opt.priceModifier}` : 'ฟรี';
-      console.log(`   ✓ ${opt.name} (${priceText})`);
+      const created = await apiRequestWithRetry('POST', '/options', {
+        optionGroupId: realOptionGroup.id,
+        name: option.name,
+        description: option.description,
+        priceModifier: option.priceModifier
+      }, token1);
+
+      realOptionGroup.options = [...existingOptions, created];
+      summary.options.created += 1;
+      console.log(`   ✓ ${option.name} (created)`);
     } catch (error) {
-      console.log(`   ✗ ${opt.name}`);
+      summary.options.failed += 1;
+      console.log(`   ✗ ${option.name} (${error.message})`);
     }
   }
-  console.log('');
 
-  // Summary
-  console.log('🎉 Seed completed!\n');
-  console.log('📊 Summary:');
-  console.log(`   ✓ ${accounts.length} accounts`);
-  console.log(`   ✓ ${categoryMap.size} categories`);
-  console.log(`   ✓ ${productMap.size} products`);
-  console.log(`   ✓ ${optionGroupMap.size} option groups`);
-  console.log(`   ✓ ${optionCount} options\n`);
-  
-  console.log('🌐 Next steps:');
-  console.log('   1. Open http://localhost:4173');
-  console.log('   2. ⚠️  IMPORTANT: Logout first if already logged in (to refresh roles)');
-  console.log('   3. Login:');
-  console.log('      Owner 1: flora.owner1@example.com / secret123 (can manage catalog & view orders)');
-  console.log('      Owner 2: flora.owner2@example.com / secret123 (can manage catalog & view orders)');
-  console.log('      Customer 1: flora.customer1@example.com / secret123');
-  console.log('      Customer 2: flora.customer2@example.com / secret123');
-  console.log('   4. Owners can access:');
-  console.log('      - Catalog dashboard: /admin/catalog');
-  console.log('      - Customer orders: /orders');
-  console.log('   5. Start shopping! 🛒\n');
+  console.log('\n🎉 Seed completed\n');
+  console.log('📊 Summary');
+  console.log(`   Accounts     -> created: ${summary.accounts.created}, existing: ${summary.accounts.existing}, failed: ${summary.accounts.failed}`);
+  console.log(`   Categories   -> created: ${summary.categories.created}, existing: ${summary.categories.existing}, failed: ${summary.categories.failed}`);
+  console.log(`   Products     -> created: ${summary.products.created}, existing: ${summary.products.existing}, failed: ${summary.products.failed}`);
+  console.log(`   OptionGroups -> created: ${summary.optionGroups.created}, existing: ${summary.optionGroups.existing}, failed: ${summary.optionGroups.failed}`);
+  console.log(`   Options      -> created: ${summary.options.created}, existing: ${summary.options.existing}, failed: ${summary.options.failed}\n`);
+
+  console.log('🔐 Demo Login');
+  console.log('   Owner 1: flora.owner1@example.com / secret123');
+  console.log('   Owner 2: flora.owner2@example.com / secret123');
+  console.log('   Customer 1: flora.customer1@example.com / secret123');
+  console.log('   Customer 2: flora.customer2@example.com / secret123\n');
 }
 
 main().catch((error) => {
-  console.error('\n❌ Error:', error.message);
+  console.error('\n❌ Seed failed:', error.message);
   process.exit(1);
 });

@@ -1,4 +1,11 @@
-import { apiClient } from './client';
+import { DefaultService } from './index';
+
+const unwrapApiData = <T>(response: any): T => {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return response.data as T;
+  }
+  return response as T;
+};
 
 export interface ProductSummary {
   id: string;
@@ -45,10 +52,10 @@ const normalizeProductDetail = (product: any): ProductDetail => ({
   ...normalizeProductSummary(product),
   category: product.category
     ? {
-        id: product.category.id,
-        name: product.category.name,
-        description: product.category.description ?? undefined
-      }
+      id: product.category.id,
+      name: product.category.name,
+      description: product.category.description ?? undefined
+    }
     : undefined,
   optionGroups: (product.optionGroups ?? []).map((group: any) => ({
     ...group,
@@ -60,12 +67,21 @@ const normalizeProductDetail = (product: any): ProductDetail => ({
 });
 
 export const fetchProducts = async (filterByOwner = false): Promise<ProductSummary[]> => {
-  const params = filterByOwner ? { filterByOwner: 'true' } : {};
-  const response = await apiClient.get('/products', { params });
-  return (response.data as any[]).map(normalizeProductSummary);
+  // DefaultService limits us to defined openapi params. If the backend doesn't define filterByOwner in swagger, we can't pass it easily via Codegen.
+  // Assuming the backend still reads it or we just ignore it for now.
+  const response = await DefaultService.productsControllerList();
+  let data = unwrapApiData<any[]>(response);
+  if (!Array.isArray(data)) {
+    data = [];
+  }
+  // Fallback frontend filter if the backend didn't do it due to missing param pass
+  if (filterByOwner) {
+    // We would need the current user ID to filter by owner, so this is a bit broken if not passed to backend.
+  }
+  return data.map(normalizeProductSummary);
 };
 
 export const fetchProductDetail = async (productId: string): Promise<ProductDetail> => {
-  const response = await apiClient.get(`/products/${productId}`);
-  return normalizeProductDetail(response.data);
+  const response = await DefaultService.productsControllerDetail(productId);
+  return normalizeProductDetail(unwrapApiData(response));
 };

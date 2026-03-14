@@ -38,8 +38,8 @@ variable "gateway_repository_url" {
   type        = string
 }
 
-variable "product_service_repository_url" {
-  description = "ECR repository URL for the product service"
+variable "inventory_service_repository_url" {
+  description = "ECR repository URL for the inventory service"
   type        = string
 }
 
@@ -53,8 +53,8 @@ variable "order_service_repository_url" {
   type        = string
 }
 
-variable "search_service_repository_url" {
-  description = "ECR repository URL for the search service"
+variable "payment_service_repository_url" {
+  description = "ECR repository URL for the payment service"
   type        = string
 }
 

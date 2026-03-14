@@ -22,10 +22,10 @@ output "ecr_repositories" {
   description = "ECR repository URLs"
   value = {
     gateway         = module.ecr.gateway_repository_url
-    product_service = module.ecr.product_service_repository_url
+    inventory_service = module.ecr.inventory_service_repository_url
     cart_service    = module.ecr.cart_service_repository_url
     order_service   = module.ecr.order_service_repository_url
-    search_service  = module.ecr.search_service_repository_url
+    payment_service  = module.ecr.payment_service_repository_url
   }
 }
 

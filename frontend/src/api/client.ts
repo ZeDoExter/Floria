@@ -1,27 +1,21 @@
 import axios from 'axios';
+import { OpenAPI, DefaultService } from './index';
 
 const API_BASE_URL: string = typeof __API_BASE_URL__ === 'string' ? __API_BASE_URL__ : 'http://localhost:3000';
 
-export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: false
-});
-
-// Add token to all requests automatically
-apiClient.interceptors.request.use((config) => {
+OpenAPI.BASE = API_BASE_URL;
+OpenAPI.TOKEN = async () => {
   const stored = localStorage.getItem('flora-tailor/auth');
   if (stored) {
     try {
       const auth = JSON.parse(stored);
-      if (auth?.token) {
-        config.headers.Authorization = `Bearer ${auth.token}`;
-      }
-    } catch (e) {
+      return auth?.token;
+    } catch {
       // Ignore parse errors
     }
   }
-  return config;
-});
+  return undefined;
+};
 
 export interface Credentials {
   email: string;
@@ -45,19 +39,26 @@ export interface RegisterData {
   lastName?: string;
 }
 
+const unwrapApiData = <T>(response: any): T => {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return response.data as T;
+  }
+  return response as T;
+};
+
 export const loginRequest = async (credentials: Credentials): Promise<AuthResponse> => {
-  const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-  return response.data;
+  const response = await DefaultService.authControllerLogin(credentials);
+  return unwrapApiData<AuthResponse>(response);
 };
 
 export const registerRequest = async (data: RegisterData): Promise<AuthResponse> => {
-  const response = await apiClient.post<AuthResponse>('/auth/register', data);
-  return response.data;
+  const response = await DefaultService.authControllerRegister(data);
+  return unwrapApiData<AuthResponse>(response);
 };
 
 export const fetchProfile = async (token: string) => {
-  const response = await apiClient.get('/profile', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return response.data;
+  // Token is automatically injected by OpenAPI.TOKEN config, so we don't strictly need to pass it here,
+  // but we keep the parameter for backwards compatibility.
+  const response = await DefaultService.authControllerProfile();
+  return unwrapApiData(response);
 };

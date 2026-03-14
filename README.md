@@ -1,7 +1,7 @@
 # Flora Tailor 🌸
 
 ![Architecture Diagram](./.doc/architecture.png)
-Flora Tailor เป็นระบบ E-Commerce แบบ Microservices ประกอบด้วย Frontend (React) และ Backend Services (NestJS/Bun) จำนวน 5 ตัว ได้แก่ Gateway, Product, Cart, Order, และ Search ทำงานร่วมกับ PostgreSQL บนโครงสร้างพื้นฐาน AWS
+Flora Tailor เป็นระบบ E-Commerce แบบ Microservices ประกอบด้วย Frontend (React) และ Backend Services (NestJS/Bun) จำนวน 5 ตัว ได้แก่ Gateway, Inventory, Cart, Order, และ Payment ทำงานร่วมกับ PostgreSQL บนโครงสร้างพื้นฐาน AWS
 
 ---
 
@@ -32,7 +32,7 @@ Flora Tailor เป็นระบบ E-Commerce แบบ Microservices ปร�
    cd backend/gateway && bun install && bun run start:dev
 
    # เปิด Terminal 2
-   cd backend/product-service && bun install && bun run start:dev
+   cd backend/inventory-service && bun install && bun run start:dev
 
    # เปิด Terminal 3
    cd backend/cart-service && bun install && bun run start:dev
@@ -41,7 +41,7 @@ Flora Tailor เป็นระบบ E-Commerce แบบ Microservices ปร�
    cd backend/order-service && bun install && bun run start:dev
 
    # เปิด Terminal 5
-   cd backend/search-service && bun install && bun run start:dev
+   cd backend/payment-service && bun install && bun run start:dev
    ```
 
 3. **ติดตั้ง Dependencies และรัน Frontend:**
@@ -56,9 +56,14 @@ Flora Tailor เป็นระบบ E-Commerce แบบ Microservices ปร�
    จากนั้นเข้าดูเว็บไซต์ได้ที่ `http://localhost:5173` (หรือพอร์ตที่ React/Vite กำหนด)
 
 4. **การจำลองข้อมูลเริ่มต้น (Seeding):**
-   หากต้องการใส่ข้อมูลจำลองลงในฐานข้อมูล
+   หากต้องการใส่ข้อมูลจำลองลงในฐานข้อมูล (รองรับการรันซ้ำแบบไม่สร้างข้อมูลซ้ำ)
    ```bash
-   node seed-all.js
+   npm run seed:init
+   ```
+
+   ถ้า Gateway ไม่ได้รันที่ `http://localhost:3000` สามารถกำหนดปลายทางได้:
+   ```bash
+   API_BASE=http://localhost:3000 npm run seed:init
    ```
 
 ---
@@ -94,8 +99,8 @@ aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS
 docker build -t $ECR_BASE/floratailor/gateway:latest ./backend/gateway
 docker push $ECR_BASE/floratailor/gateway:latest
 
-docker build -t $ECR_BASE/floratailor/product-service:latest ./backend/product-service
-docker push $ECR_BASE/floratailor/product-service:latest
+docker build -t $ECR_BASE/floratailor/inventory-service:latest ./backend/inventory-service
+docker push $ECR_BASE/floratailor/inventory-service:latest
 
 docker build -t $ECR_BASE/floratailor/cart-service:latest ./backend/cart-service
 docker push $ECR_BASE/floratailor/cart-service:latest
@@ -103,8 +108,8 @@ docker push $ECR_BASE/floratailor/cart-service:latest
 docker build -t $ECR_BASE/floratailor/order-service:latest ./backend/order-service
 docker push $ECR_BASE/floratailor/order-service:latest
 
-docker build -t $ECR_BASE/floratailor/search-service:latest ./backend/search-service
-docker push $ECR_BASE/floratailor/search-service:latest
+docker build -t $ECR_BASE/floratailor/payment-service:latest ./backend/payment-service
+docker push $ECR_BASE/floratailor/payment-service:latest
 ```
 
 ### Step 3: รัน Terraform เพื่อสร้างส่วนที่เหลือทั้งหมด

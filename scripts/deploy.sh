@@ -28,7 +28,7 @@ echo -e "\n\033[1;33m[2/6] Logging in to ECR...\033[0m"
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_BASE
 
 echo -e "\n\033[1;33m[3/6] Building and pushing backend services...\033[0m"
-SERVICES=("gateway" "product-service" "cart-service" "order-service" "search-service")
+SERVICES=("gateway" "inventory-service" "cart-service" "order-service" "payment-service")
 
 for service in "${SERVICES[@]}"; do
     echo -e "  \033[1;36m-> Building $service...\033[0m"
