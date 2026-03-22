@@ -80,8 +80,8 @@ export const OrderHistoryPage = () => {
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl sm:text-5xl font-light italic text-foreground">Order History</h1>
-          <p className="text-muted-foreground">Track and manage all your orders</p>
+          <h1 className="text-4xl sm:text-5xl font-light italic text-foreground" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>Order History</h1>
+          <p className="text-muted-foreground" style={{ fontFamily: "'Sarabun', sans-serif" }}>Track and manage all your orders</p>
         </div>
 
         {/* Loading State */}
@@ -277,7 +277,7 @@ export const OrderHistoryPage = () => {
                                         <div key={opt.id} className="text-xs flex justify-between items-center bg-muted/50 rounded px-2 py-1">
                                           <span className="text-foreground font-medium">{opt.name}</span>
                                           {opt.priceModifier > 0 && (
-                                            <span className="text-success font-semibold">+${opt.priceModifier.toFixed(2)}</span>
+                                            <span className="text-muted-foreground font-semibold">+฿{opt.priceModifier.toFixed(0)}</span>
                                           )}
                                           {opt.priceModifier === 0 && (
                                             <span className="text-muted-foreground text-xs">included</span>
@@ -297,21 +297,21 @@ export const OrderHistoryPage = () => {
                                         <>
                                           <div className="text-xs text-muted-foreground flex justify-between">
                                             <span>Base Price:</span>
-                                            <span>${basePrice.toFixed(2)}</span>
+                                            <span>฿{basePrice.toFixed(0)}</span>
                                           </div>
                                           {optionsTotal > 0 && (
                                             <div className="text-xs text-muted-foreground flex justify-between">
                                               <span>Options:</span>
-                                              <span className="text-primary">+${optionsTotal.toFixed(2)}</span>
+                                              <span className="text-primary">+฿{optionsTotal.toFixed(0)}</span>
                                             </div>
                                           )}
                                           <div className="text-sm font-semibold text-foreground flex justify-between border-t border-border pt-1">
                                             <span>Unit Price:</span>
-                                            <span className="text-primary">${item.unitPrice.toFixed(2)}</span>
+                                            <span className="text-primary">฿{item.unitPrice.toFixed(0)}</span>
                                           </div>
                                           <div className="text-sm font-bold text-primary flex justify-between">
                                             <span>Total ({item.quantity}x):</span>
-                                            <span>${(item.unitPrice * item.quantity).toFixed(2)}</span>
+                                            <span>฿{(item.unitPrice * item.quantity).toFixed(0)}</span>
                                           </div>
                                         </>
                                       );
@@ -359,8 +359,8 @@ export const OrderHistoryPage = () => {
                         {/* Total */}
                         <div className="border-t border-border pt-4 flex justify-between items-center">
                           <p className="text-muted-foreground">Total</p>
-                          <p className="text-2xl font-bold text-primary">
-                            ${order.totalAmount.toFixed(2)}
+                          <p className="text-2xl font-bold text-primary" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                            ฿{order.totalAmount.toFixed(0)}
                           </p>
                         </div>
 
