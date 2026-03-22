@@ -264,18 +264,18 @@ export function AdminCatalogPage() {
 
   const tabs = ["Products", "Categories", "Option Groups", "Options"]
 
-  const inputClass = "w-full px-4 py-3 rounded-2xl border-2 border-border bg-card text-foreground focus:outline-none focus:border-primary transition-colors"
-  const cardClass = "rounded-3xl p-6 border-2 bg-card border-border shadow-card"
-  const itemClass = "flex items-start gap-4 p-4 rounded-2xl border-2 bg-card border-border hover:border-primary/30 transition-all duration-200"
+  const inputClass = "w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:border-primary transition-colors"
+  const cardClass = "rounded-2xl p-6 border bg-card border-border shadow-[0_4px_16px_rgba(180,80,100,0.07)]"
+  const itemClass = "flex items-start gap-4 p-4 rounded-2xl border bg-card border-border hover:border-primary/30 transition-all duration-200"
   const buttonClass = "p-2 rounded-full hover:bg-accent transition-colors"
 
   const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: ReactNode }) => {
     if (!isOpen) return null
     return (
       <div className="fixed inset-0 bg-foreground/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-card rounded-3xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border-2 border-border shadow-soft-lg animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-card rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-border shadow-[0_4px_16px_rgba(180,80,100,0.07)] animate-scale-in" onClick={(e) => e.stopPropagation()}>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold font-heading text-foreground">{title}</h2>
+            <h2 className="text-xl font-bold font-heading text-foreground" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>{title}</h2>
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-2xl leading-none">&times;</button>
           </div>
           {children}
@@ -295,7 +295,7 @@ export function AdminCatalogPage() {
                 : "bg-error/10 border-error/30 text-error"
               }`}
           >
-            <p className="text-sm font-bold">{toast.type === "success" ? "✨" : "⚠️"} {toast.message}</p>
+            <p className="text-sm font-bold">{toast.type === "success" ? "Success:" : "Error:"} {toast.message}</p>
           </div>
         ))}
       </div>
@@ -303,7 +303,7 @@ export function AdminCatalogPage() {
       <div className="max-w-6xl mx-auto px-8">
         {/* Header */}
         <div className="py-8">
-          <h1 className="text-3xl sm:text-4xl font-bold font-heading text-foreground">✨ My Shop</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold font-heading text-foreground" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>My Shop</h1>
           <p className="text-muted-foreground mt-1 text-sm">Manage your products, categories, and options</p>
         </div>
 
@@ -325,15 +325,15 @@ export function AdminCatalogPage() {
 
         {/* Main Content */}
         <div className="pb-8">
-          {isLoading && <div className="text-center py-8"><span className="animate-pulse-soft text-muted-foreground">🌸 Loading catalog...</span></div>}
-          {error && <div className="bg-error/10 border-2 border-error/20 rounded-2xl p-4 mb-6"><p className="text-error text-sm font-medium">⚠️ {error}</p></div>}
+          {isLoading && <div className="text-center py-8"><span className="animate-pulse-soft text-muted-foreground">Loading catalog...</span></div>}
+          {error && <div className="bg-error/10 border-2 border-error/20 rounded-2xl p-4 mb-6"><p className="text-error text-sm font-medium">{error}</p></div>}
 
           <div className="grid grid-cols-[1fr_2fr] gap-8">
             {/* Products Tab */}
             {activeTab === "products" && (
               <>
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
                     <PlusIcon className="w-5 h-5 text-secondary" />
                     New Product
                   </h2>
@@ -370,13 +370,13 @@ export function AdminCatalogPage() {
                       </select>
                     </div>
                     <button onClick={handleCreateProduct} disabled={isSaving} className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm hover:bg-secondary transition-colors disabled:opacity-60 shadow-soft">
-                      Create Product 🌸
+                      Create Product
                     </button>
                   </div>
                 </div>
 
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6">Products ({products.length})</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-6" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>Products ({products.length})</h2>
                   <div className="space-y-4">
                     {products.map((product) => (
                       <div key={product.id} className={itemClass}>
@@ -384,7 +384,7 @@ export function AdminCatalogPage() {
                           {product.imageUrl ? (
                             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-accent to-muted flex items-center justify-center"><span className="text-2xl">🌸</span></div>
+                            <div className="w-full h-full bg-gradient-to-br from-accent to-muted flex items-center justify-center"><span className="text-xs text-muted-foreground">No image</span></div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -396,7 +396,7 @@ export function AdminCatalogPage() {
                           </div>
                           <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{product.description}</p>
                           <div className="flex items-center gap-3 mt-2">
-                            <span className="font-bold text-primary">${product.basePrice}</span>
+                            <span className="font-bold text-primary" style={{ fontFamily: "'DM Serif Display', serif" }}>฿{product.basePrice}</span>
                             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{getCategoryName(product.categoryId)}</span>
                           </div>
                         </div>
@@ -422,7 +422,7 @@ export function AdminCatalogPage() {
             {activeTab === "categories" && (
               <>
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
                     <PlusIcon className="w-5 h-5 text-secondary" />
                     New Category
                   </h2>
@@ -437,14 +437,14 @@ export function AdminCatalogPage() {
                       <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
                       <textarea value={categoryForm.description} onChange={(e) => setCategoryForm((prev) => ({ ...prev, description: e.target.value }))} rows={3} className={inputClass} />
                     </div>
-                    <button onClick={handleCreateCategory} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
+                    <button onClick={handleCreateCategory} disabled={isSaving} className="px-6 py-2 rounded-full bg-primary text-primary-foreground hover:opacity-80 disabled:opacity-60">
                       Create Category
                     </button>
                   </div>
                 </div>
 
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6">Categories ({categories.length})</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-6" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>Categories ({categories.length})</h2>
                   <div className="space-y-4">
                     {categories.map((category) => (
                       <div key={category.id} className={itemClass}>
@@ -468,7 +468,7 @@ export function AdminCatalogPage() {
             {activeTab === "option-groups" && (
               <>
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
                     <PlusIcon className="w-5 h-5 text-secondary" />
                     New Option Group
                   </h2>
@@ -508,14 +508,14 @@ export function AdminCatalogPage() {
                         <input type="number" value={optionGroupForm.maxSelect} onChange={(e) => setOptionGroupForm((prev) => ({ ...prev, maxSelect: e.target.value }))} className={inputClass} />
                       </div>
                     </div>
-                    <button onClick={handleCreateOptionGroup} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
+                    <button onClick={handleCreateOptionGroup} disabled={isSaving} className="px-6 py-2 rounded-full bg-primary text-primary-foreground hover:opacity-80 disabled:opacity-60">
                       Create Option Group
                     </button>
                   </div>
                 </div>
 
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6">Option Groups ({optionGroups.length})</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-6" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>Option Groups ({optionGroups.length})</h2>
                   <div className="space-y-4">
                     {optionGroups.map((group) => (
                       <div key={group.id} className={itemClass}>
@@ -545,7 +545,7 @@ export function AdminCatalogPage() {
             {activeTab === "options" && (
               <>
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
                     <PlusIcon className="w-5 h-5 text-secondary" />
                     New Option
                   </h2>
@@ -575,14 +575,14 @@ export function AdminCatalogPage() {
                       <label className="block text-sm font-semibold text-foreground mb-2">Price Modifier (฿)</label>
                       <input type="number" value={optionForm.priceModifier} onChange={(e) => setOptionForm((prev) => ({ ...prev, priceModifier: e.target.value }))} className={inputClass} />
                     </div>
-                    <button onClick={handleCreateOption} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">
+                    <button onClick={handleCreateOption} disabled={isSaving} className="px-6 py-2 rounded-full bg-primary text-primary-foreground hover:opacity-80 disabled:opacity-60">
                       Create Option
                     </button>
                   </div>
                 </div>
 
                 <div className={cardClass}>
-                  <h2 className="text-lg font-semibold text-foreground mb-6">Options ({options.length})</h2>
+                  <h2 className="text-lg font-semibold text-foreground mb-6" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>Options ({options.length})</h2>
                   <div className="space-y-4">
                     {options.map((option) => (
                       <div key={option.id} className={itemClass}>
@@ -623,8 +623,8 @@ export function AdminCatalogPage() {
               <textarea value={editingCategory.description ?? ""} onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })} rows={3} className={inputClass} />
             </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setEditingCategory(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveCategory} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
+              <button onClick={() => setEditingCategory(null)} className="px-6 py-2 rounded-full bg-muted text-foreground hover:opacity-80">Cancel</button>
+              <button onClick={handleSaveCategory} disabled={isSaving} className="px-6 py-2 rounded-full bg-primary text-primary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
             </div>
           </div>
         )}
@@ -665,7 +665,7 @@ export function AdminCatalogPage() {
                 className={`toggle-switch ${editingProduct!.isOutOfStock ? 'active' : ''}`}
               />
               <label className="text-sm font-bold text-foreground">
-                {editingProduct!.isOutOfStock ? '🚫 Sold Out' : '✅ In Stock'}
+                {editingProduct!.isOutOfStock ? 'Sold Out' : 'In Stock'}
               </label>
             </div>
             <div className="flex gap-3 justify-end">
@@ -711,8 +711,8 @@ export function AdminCatalogPage() {
               </div>
             </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setEditingOptionGroup(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveOptionGroup} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
+              <button onClick={() => setEditingOptionGroup(null)} className="px-6 py-2 rounded-full bg-muted text-foreground hover:opacity-80">Cancel</button>
+              <button onClick={handleSaveOptionGroup} disabled={isSaving} className="px-6 py-2 rounded-full bg-primary text-primary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
             </div>
           </div>
         )}
@@ -743,8 +743,8 @@ export function AdminCatalogPage() {
               <input type="number" value={editingOption.priceModifier} onChange={(e) => setEditingOption({ ...editingOption, priceModifier: Number(e.target.value) })} className={inputClass} />
             </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setEditingOption(null)} className="px-6 py-2 rounded-lg bg-muted text-foreground hover:opacity-80">Cancel</button>
-              <button onClick={handleSaveOption} disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
+              <button onClick={() => setEditingOption(null)} className="px-6 py-2 rounded-full bg-muted text-foreground hover:opacity-80">Cancel</button>
+              <button onClick={handleSaveOption} disabled={isSaving} className="px-6 py-2 rounded-full bg-primary text-primary-foreground hover:opacity-80 disabled:opacity-60">Save</button>
             </div>
           </div>
         )}
