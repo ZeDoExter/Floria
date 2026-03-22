@@ -23,10 +23,10 @@ export const NavBar = () => {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group" onClick={() => setMobileOpen(false)}>
+          <Link to="/" className="flex items-center" onClick={() => setMobileOpen(false)}>
             <span
               style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: '3px' }}
-              className="text-2xl font-semibold text-foreground tracking-widest uppercase"
+              className="text-2xl font-semibold text-foreground uppercase"
             >
               FLORIA
             </span>
