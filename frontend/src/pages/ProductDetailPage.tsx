@@ -192,7 +192,8 @@ export const ProductDetailPage = () => {
                 {product.name}
               </h1>
               {product.categoryName && (
-                <p className="text-sm text-muted-foreground font-medium">
+                <p className="text-xs uppercase text-muted-foreground font-medium"
+                  style={{ fontFamily: "'Inter', sans-serif" }}>
                   {product.categoryName}
                 </p>
               )}
@@ -212,7 +213,7 @@ export const ProductDetailPage = () => {
             </p>
 
             {product.description && (
-              <p className="text-foreground/80 leading-relaxed text-sm"
+              <p className="text-body leading-relaxed text-sm"
                 style={{ fontFamily: "'Sarabun', sans-serif" }}>
                 {product.description}
               </p>
@@ -244,13 +245,13 @@ export const ProductDetailPage = () => {
                             disabled={product.isOutOfStock}
                             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${isSelected
                                 ? 'bg-primary text-primary-foreground shadow-soft scale-105'
-                                : 'bg-card text-foreground border-2 border-border hover:border-primary/50'
+                                : 'bg-muted text-muted-foreground'
                               } ${product.isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             {option.name}
                             {option.priceModifier !== 0 && (
                               <span className="ml-1 text-xs opacity-80">
-                                ({option.priceModifier > 0 ? '+' : ''}${option.priceModifier.toFixed(2)})
+                                ({option.priceModifier > 0 ? '+' : ''}฿{option.priceModifier.toFixed(2)})
                               </span>
                             )}
                           </button>
@@ -280,7 +281,7 @@ export const ProductDetailPage = () => {
                       : 'bg-muted text-muted-foreground cursor-not-allowed'
                   }`}
               >
-                {addedToCart ? 'Added to Cart' : `Add to Cart — $${totalPrice.toFixed(2)}`}
+                {addedToCart ? 'Added to Cart' : `Add to Cart — ฿${totalPrice.toFixed(2)}`}
               </button>
             ) : (
               <div className="bg-warning/10 border-2 border-warning/30 rounded-2xl p-4 text-center">
