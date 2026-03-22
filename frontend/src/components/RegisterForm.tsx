@@ -28,10 +28,18 @@ export const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) 
   return (
     <div className="h-fit inset-0 flex justify-center bg-background">
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
+        <div
+          className="bg-card border border-border rounded-2xl overflow-hidden"
+          style={{ boxShadow: '0 8px 32px rgba(180,80,100,0.10)' }}
+        >
           {/* Header */}
           <div className="p-8 text-center text-primary-foreground relative">
-            <h1 className="text-3xl font-bold mb-2">Create Account</h1>
+            <h2
+              className="text-3xl font-semibold text-foreground mb-2"
+              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+            >
+              Create Account
+            </h2>
             <p className="opacity-90">Join us today</p>
           </div>
 
@@ -48,7 +56,7 @@ export const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) 
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First Name (optional)"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
                 />
               </div>
 
@@ -62,7 +70,7 @@ export const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) 
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Last Name (optional)"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
                 />
               </div>
 
@@ -77,7 +85,7 @@ export const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) 
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email Address"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
                 />
               </div>
 
@@ -93,7 +101,7 @@ export const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) 
                   placeholder="Password (min 6 characters)"
                   required
                   minLength={6}
-                  className="w-full pl-10 pr-12 py-3 rounded-lg border border-border bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
                 />
                 <button
                   type="button"
@@ -115,7 +123,7 @@ export const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-secondary text-secondary-foreground py-3 px-4 rounded-lg font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-primary-foreground py-3 px-4 rounded-full font-medium hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Creating…' : 'Create Account'}
               </button>

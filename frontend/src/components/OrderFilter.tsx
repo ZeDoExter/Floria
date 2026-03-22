@@ -18,10 +18,10 @@ export const OrderFilter = ({ filter, onFilterChange }: OrderFilterProps) => {
         <button
           key={f.value}
           onClick={() => onFilterChange(f.value)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
             filter === f.value
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'bg-card text-muted-foreground hover:bg-muted border border-border'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:bg-muted border border-border'
           }`}
         >
           {f.label}
