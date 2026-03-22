@@ -290,7 +290,7 @@ export function AdminCatalogPage() {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`min-w-72 max-w-96 rounded-2xl border-2 px-4 py-3 shadow-soft animate-fade-in ${toast.type === "success"
+            className={`min-w-72 max-w-96 rounded-2xl border px-4 py-3 shadow-soft animate-fade-in ${toast.type === "success"
                 ? "bg-success/10 border-success/30 text-success"
                 : "bg-error/10 border-error/30 text-error"
               }`}
@@ -326,7 +326,7 @@ export function AdminCatalogPage() {
         {/* Main Content */}
         <div className="pb-8">
           {isLoading && <div className="text-center py-8"><span className="animate-pulse-soft text-muted-foreground">Loading catalog...</span></div>}
-          {error && <div className="bg-error/10 border-2 border-error/20 rounded-2xl p-4 mb-6"><p className="text-error text-sm font-medium">{error}</p></div>}
+          {error && <div className="bg-error/10 border border-error/20 rounded-2xl p-4 mb-6"><p className="text-error text-sm font-medium">{error}</p></div>}
 
           <div className="grid grid-cols-[1fr_2fr] gap-8">
             {/* Products Tab */}
