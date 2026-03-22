@@ -180,7 +180,7 @@ export const NavBar = () => {
                   <Link to="/login" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-bold text-primary-foreground bg-primary hover:bg-secondary transition-colors text-center">
                     Sign In
                   </Link>
-                  <Link to="/register" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-colors text-center">
+                  <Link to="/register" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-full text-sm font-bold text-primary border border-primary hover:bg-primary hover:text-primary-foreground transition-colors text-center">
                     Sign Up
                   </Link>
                 </>

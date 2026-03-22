@@ -440,7 +440,7 @@ export const HomePage = () => {
             )}
 
             {displayedProducts.length === 0 && (
-              <div className="text-center py-16 bg-card rounded-3xl border-2 border-border animate-fade-in-up">
+              <div className="text-center py-16 bg-card rounded-2xl border border-border animate-fade-in-up">
                 <PackageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="font-bold text-foreground text-lg mb-1">No products yet</h3>
                 <p className="text-muted-foreground text-sm">Check back soon for beautiful blooms!</p>

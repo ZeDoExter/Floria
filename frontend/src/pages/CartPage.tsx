@@ -298,7 +298,7 @@ export const CartPage = () => {
                                 onClick={() => toggleOption(group, option.id)}
                                 className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${isSelected
                                     ? 'bg-primary text-primary-foreground shadow-soft'
-                                    : 'bg-muted text-foreground border-2 border-border hover:border-primary/50'
+                                    : 'bg-muted text-muted-foreground border border-border hover:border-primary/50'
                                   }`}
                               >
                                 {option.name}
