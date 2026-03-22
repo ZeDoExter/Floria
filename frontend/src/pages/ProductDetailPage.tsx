@@ -74,7 +74,7 @@ export const ProductDetailPage = () => {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center animate-fade-in">
-          <span className="text-5xl mb-4 block">🥀</span>
+          <PackageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-xl font-bold text-foreground mb-2">Oops!</h2>
           <p className="text-muted-foreground mb-4">{error || 'Product not found'}</p>
           <Link to="/" className="inline-block bg-primary text-primary-foreground px-6 py-2.5 rounded-full font-bold text-sm hover:bg-secondary transition-colors shadow-soft">
@@ -159,7 +159,7 @@ export const ProductDetailPage = () => {
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Image */}
           <div className="relative">
-            <div className="rounded-3xl overflow-hidden border-2 border-border shadow-card">
+            <div className="rounded-2xl overflow-hidden border border-border shadow-card">
               {product.imageUrl ? (
                 <img
                   src={product.imageUrl}
@@ -168,14 +168,15 @@ export const ProductDetailPage = () => {
                 />
               ) : (
                 <div className="w-full h-80 md:h-[420px] bg-gradient-to-br from-accent to-muted flex items-center justify-center">
-                  <span className="text-6xl animate-float">🌸</span>
+                  <PackageIcon className="h-16 w-16 text-muted-foreground" />
                 </div>
               )}
 
               {/* Sold Out Overlay */}
               {product.isOutOfStock && (
-                <div className="absolute inset-0 bg-foreground/40 rounded-3xl flex items-center justify-center">
-                  <div className="bg-sold-out text-white px-6 py-3 rounded-2xl font-bold text-lg uppercase tracking-wider shadow-lg">
+                <div className="absolute inset-0 bg-background/70 rounded-2xl flex items-center justify-center">
+                  <div className="bg-card border border-border text-muted-foreground px-6 py-2 rounded-full font-semibold text-sm uppercase tracking-wider"
+                    style={{ fontFamily: "'Inter', sans-serif" }}>
                     Sold Out
                   </div>
                 </div>
@@ -186,7 +187,8 @@ export const ProductDetailPage = () => {
           {/* Product Info */}
           <div className="space-y-5">
             <div>
-              <h1 className="text-3xl font-bold font-heading text-foreground mb-2">
+              <h1 className="text-3xl text-foreground mb-2"
+                style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
                 {product.name}
               </h1>
               {product.categoryName && (
@@ -199,17 +201,19 @@ export const ProductDetailPage = () => {
                   to={`/shops/${product.ownerId}`}
                   className="inline-block mt-1 text-sm text-primary font-semibold hover:text-secondary transition-colors"
                 >
-                  by {ownerName} 🌿
+                  by {ownerName}
                 </Link>
               )}
             </div>
 
-            <p className="text-3xl font-bold text-primary">
-              ${totalPrice.toFixed(2)}
+            <p className="text-4xl text-primary"
+              style={{ fontFamily: "'DM Serif Display', serif" }}>
+              ฿{totalPrice.toFixed(0)}
             </p>
 
             {product.description && (
-              <p className="text-foreground/80 leading-relaxed text-sm">
+              <p className="text-foreground/80 leading-relaxed text-sm"
+                style={{ fontFamily: "'Sarabun', sans-serif" }}>
                 {product.description}
               </p>
             )}
@@ -220,16 +224,13 @@ export const ProductDetailPage = () => {
                 {product.optionGroups.map(group => (
                   <div key={group.id} className="bg-muted/50 rounded-2xl p-4 border border-border">
                     <div className="mb-3">
-                      <h3 className="font-bold text-foreground text-sm">
+                      <h3 className="font-bold text-foreground text-sm" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                         {group.name}
                         {group.isRequired && <span className="text-sold-out ml-1">*</span>}
                       </h3>
                       {group.description && (
                         <p className="text-xs text-muted-foreground mt-0.5">{group.description}</p>
                       )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Select {group.minSelect}–{group.maxSelect}
-                      </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -265,26 +266,26 @@ export const ProductDetailPage = () => {
             {product.isOutOfStock ? (
               <div className="bg-sold-out/10 border-2 border-sold-out/20 rounded-2xl p-4 text-center">
                 <p className="text-sold-out font-bold text-sm">
-                  This product is currently out of stock 🥀
+                  This product is currently out of stock.
                 </p>
               </div>
             ) : canOrder ? (
               <button
                 onClick={handleAddToCart}
                 disabled={!isValid}
-                className={`w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 shadow-soft ${addedToCart
+                className={`w-full py-3.5 rounded-full font-bold text-sm transition-all duration-300 shadow-soft ${addedToCart
                     ? 'bg-success text-success-foreground scale-105'
                     : isValid
                       ? 'bg-primary text-primary-foreground hover:bg-secondary hover:shadow-soft-lg'
                       : 'bg-muted text-muted-foreground cursor-not-allowed'
                   }`}
               >
-                {addedToCart ? '✓ Added to Cart!' : `Add to Cart — $${totalPrice.toFixed(2)}`}
+                {addedToCart ? 'Added to Cart' : `Add to Cart — $${totalPrice.toFixed(2)}`}
               </button>
             ) : (
               <div className="bg-warning/10 border-2 border-warning/30 rounded-2xl p-4 text-center">
                 <p className="text-sm text-foreground font-medium">
-                  Switch to a customer account to place orders 🌻
+                  Switch to a customer account to place orders.
                 </p>
               </div>
             )}
