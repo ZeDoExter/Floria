@@ -6,13 +6,13 @@ import { ChevronDownIcon } from '../components/icons/ChevronDownIcon';
 import { PackageIcon } from '../components/icons/PackageIcon';
 
 const statusConfig = {
-  COMPLETED: { label: 'Delivered', color: 'bg-success text-white', icon: '✓' },
-  PENDING: { label: 'Pending', color: 'bg-muted text-muted-foreground', icon: '○' },
-  PLACED: { label: 'Processing', color: 'bg-primary text-primary-foreground', icon: '⟳' },
-  PREPARING: { label: 'Processing', color: 'bg-primary text-primary-foreground', icon: '⟳' },
-  READY_FOR_PICKUP: { label: 'Processing', color: 'bg-primary text-primary-foreground', icon: '⟳' },
-  OUT_FOR_DELIVERY: { label: 'Processing', color: 'bg-primary text-primary-foreground', icon: '⟳' },
-  CANCELLED: { label: 'Cancelled', color: 'bg-error text-white', icon: '✕' },
+  COMPLETED: { label: 'Delivered', color: 'bg-primary text-primary-foreground' },
+  PENDING: { label: 'Pending', color: 'bg-muted text-muted-foreground' },
+  PLACED: { label: 'Processing', color: 'bg-primary text-primary-foreground' },
+  PREPARING: { label: 'Processing', color: 'bg-primary text-primary-foreground' },
+  READY_FOR_PICKUP: { label: 'Processing', color: 'bg-primary text-primary-foreground' },
+  OUT_FOR_DELIVERY: { label: 'Processing', color: 'bg-primary text-primary-foreground' },
+  CANCELLED: { label: 'Cancelled', color: 'bg-error text-white' },
 };
 
 export const OrderHistoryPage = () => {
@@ -52,8 +52,8 @@ export const OrderHistoryPage = () => {
         <div className="mx-auto max-w-4xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl sm:text-5xl font-light italic text-foreground">Order History</h1>
-            <p className="text-muted-foreground">Track and manage all your orders</p>
+            <h1 className="text-4xl sm:text-5xl font-light italic text-foreground" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>Order History</h1>
+            <p className="text-muted-foreground" style={{ fontFamily: "'Sarabun', sans-serif" }}>Track and manage all your orders</p>
           </div>
 
           {/* Sign In Card */}
@@ -65,7 +65,7 @@ export const OrderHistoryPage = () => {
             </p>
             <a 
               href="/login" 
-              className="inline-block bg-success text-white px-6 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+              className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
             >
               Sign In
             </a>
@@ -233,7 +233,6 @@ export const OrderHistoryPage = () => {
                       {/* Status & Expand Icon */}
                       <div className="flex items-center gap-4">
                         <div className={`px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium ${config.color}`}>
-                          <span>{config.icon}</span>
                           {config.label}
                         </div>
                         <ChevronDownIcon
@@ -303,14 +302,14 @@ export const OrderHistoryPage = () => {
                                           {optionsTotal > 0 && (
                                             <div className="text-xs text-muted-foreground flex justify-between">
                                               <span>Options:</span>
-                                              <span className="text-success">+${optionsTotal.toFixed(2)}</span>
+                                              <span className="text-primary">+${optionsTotal.toFixed(2)}</span>
                                             </div>
                                           )}
                                           <div className="text-sm font-semibold text-foreground flex justify-between border-t border-border pt-1">
                                             <span>Unit Price:</span>
-                                            <span className="text-success">${item.unitPrice.toFixed(2)}</span>
+                                            <span className="text-primary">${item.unitPrice.toFixed(2)}</span>
                                           </div>
-                                          <div className="text-sm font-bold text-success flex justify-between">
+                                          <div className="text-sm font-bold text-primary flex justify-between">
                                             <span>Total ({item.quantity}x):</span>
                                             <span>${(item.unitPrice * item.quantity).toFixed(2)}</span>
                                           </div>
@@ -360,7 +359,7 @@ export const OrderHistoryPage = () => {
                         {/* Total */}
                         <div className="border-t border-border pt-4 flex justify-between items-center">
                           <p className="text-muted-foreground">Total</p>
-                          <p className="text-2xl font-bold text-success">
+                          <p className="text-2xl font-bold text-primary">
                             ${order.totalAmount.toFixed(2)}
                           </p>
                         </div>
@@ -368,7 +367,7 @@ export const OrderHistoryPage = () => {
                           {/* Actions */}
                           {order.status === 'COMPLETED' && (
                             <div className="mt-6">
-                              <button className="w-full px-4 py-3 rounded-xl font-medium text-white transition hover:opacity-90 bg-success">
+                              <button className="w-full px-4 py-3 rounded-xl font-medium text-primary-foreground transition hover:opacity-90 bg-primary">
                                 Order Again
                               </button>
                             </div>

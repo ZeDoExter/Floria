@@ -77,7 +77,7 @@ export const CustomerOrdersPage = () => {
       <div className="min-h-screen bg-background px-4 py-8 md:px-8">
         <div className="mx-auto max-w-4xl">
           <div className="mb-8">
-            <h1 className="text-4xl sm:text-5xl font-light italic text-foreground">Customer Orders</h1>
+            <h1 className="text-4xl sm:text-5xl font-light italic text-foreground" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>Customer Orders</h1>
             <p className="text-muted-foreground">You need an owner account to view customer orders</p>
           </div>
         </div>
@@ -119,10 +119,10 @@ export const CustomerOrdersPage = () => {
           <div className="mb-6 flex flex-wrap gap-2">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                 statusFilter === 'ALL'
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground hover:bg-border'
+                  : 'bg-muted text-muted-foreground hover:bg-primary-light'
               }`}
             >
               All
@@ -131,10 +131,10 @@ export const CustomerOrdersPage = () => {
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                   statusFilter === status
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground hover:bg-border'
+                    : 'bg-muted text-muted-foreground hover:bg-primary-light'
                 }`}
               >
                 {statusConfig[status].label}
@@ -178,8 +178,8 @@ export const CustomerOrdersPage = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-2xl font-bold text-success">
-                              ${order.totalAmount.toFixed(2)}
+                            <p className="text-2xl font-bold text-primary" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                              ฿{order.totalAmount.toFixed(2)}
                             </p>
                           </div>
                         </div>
