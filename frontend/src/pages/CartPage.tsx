@@ -8,6 +8,7 @@ import { PlusIcon } from '../components/icons/PlusIcon';
 import { MinusIcon } from '../components/icons/MinusIcon';
 import { TrashIcon } from '../components/icons/TrashIcon';
 import { EditIcon } from '../components/icons/EditIcon';
+import { PackageIcon } from '../components/icons/PackageIcon';
 
 type EditingItem = {
   productId: string;
@@ -160,22 +161,22 @@ export const CartPage = () => {
       <div className="mx-auto max-w-2xl animate-fade-in-up">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold font-heading text-foreground">
-            🛒 Your Cart
+          <h1 className="text-3xl sm:text-4xl font-bold font-heading text-foreground" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>
+            Your Cart
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Review your selections before checkout</p>
         </div>
 
         {cartItems.length === 0 ? (
-          <div className="bg-card border-2 border-border rounded-3xl shadow-card p-12 text-center animate-fade-in">
-            <span className="text-5xl mb-4 block animate-float">🌸</span>
+          <div className="bg-card border border-border rounded-2xl shadow-card p-12 text-center animate-fade-in">
+            <PackageIcon className="h-14 w-14 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-lg font-bold text-foreground mb-1">Your cart is empty</h2>
             <p className="text-sm text-muted-foreground mb-6">Add some beautiful flowers to get started!</p>
             <Link
               to="/"
               className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold text-sm hover:bg-secondary transition-all duration-200 shadow-soft"
             >
-              Browse Flowers 🌷
+              Browse Flowers
             </Link>
           </div>
         ) : (
@@ -186,19 +187,19 @@ export const CartPage = () => {
                 const selectedOpts = getSelectedOptionsDisplay(item.productId, item.selectedOptionIds);
 
                 return (
-                  <div key={`${item.productId}-${item.selectedOptionIds.join('-')}`} className="flex gap-4 rounded-2xl bg-card p-4 border-2 border-border hover:border-primary/30 transition-all duration-200 shadow-card">
+                  <div key={`${item.productId}-${item.selectedOptionIds.join('-')}`} className="flex gap-4 rounded-2xl bg-card p-4 border border-border hover:border-primary/30 transition-all duration-200 shadow-card">
                     {/* Product Image */}
                     <div className="h-20 w-20 rounded-xl bg-gradient-to-br from-accent to-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {productDetails[item.productId]?.imageUrl ? (
                         <img src={productDetails[item.productId].imageUrl!} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <span className="text-2xl">🌸</span>
+                        <PackageIcon className="h-8 w-8 text-muted-foreground" />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold text-foreground">{item.productName ?? 'Custom Bouquet'}</h3>
-                      <p className="text-primary font-bold text-sm mt-0.5">${(item.unitPrice ?? 0).toFixed(2)}</p>
+                      <p className="text-primary font-bold text-sm mt-0.5" style={{ fontFamily: "'DM Serif Display', serif" }}>${(item.unitPrice ?? 0).toFixed(2)}</p>
 
                       {selectedOpts.length > 0 && (
                         <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
@@ -251,7 +252,7 @@ export const CartPage = () => {
                           <TrashIcon className="h-4 w-4" />
                         </button>
                       </div>
-                      <p className="font-bold text-sm text-foreground">
+                      <p className="font-bold text-sm text-foreground" style={{ fontFamily: "'DM Serif Display', serif" }}>
                         ${((item.unitPrice ?? 0) * item.quantity).toFixed(2)}
                       </p>
                     </div>
@@ -263,12 +264,15 @@ export const CartPage = () => {
             {/* Edit Modal */}
             {editingItem && productDetails[editingItem.productId] && (
               <div className="fixed inset-0 bg-foreground/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setEditingItem(null)}>
-                <div className="bg-card border-2 border-border rounded-3xl shadow-soft-lg max-w-md w-full max-h-[80vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                <div className="bg-card border border-border rounded-2xl shadow-soft-lg max-w-md w-full max-h-[80vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
                   <div className="p-6 space-y-4">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-bold font-heading text-foreground">Edit Options ✨</h2>
-                      <button onClick={() => setEditingItem(null)} className="text-muted-foreground hover:text-foreground text-lg">
-                        ✕
+                      <h2 className="text-xl font-bold font-heading text-foreground">Edit Options</h2>
+                      <button onClick={() => setEditingItem(null)} className="text-muted-foreground hover:text-foreground transition-colors p-1" aria-label="Close">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
                       </button>
                     </div>
 
@@ -330,18 +334,18 @@ export const CartPage = () => {
             )}
 
             {/* Summary */}
-            <div className="rounded-3xl bg-card p-6 border-2 border-border shadow-card space-y-3">
+            <div className="rounded-2xl bg-card p-6 border border-border shadow-card space-y-3">
               <div className="flex justify-between text-sm text-foreground">
                 <span>Subtotal</span>
-                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                <span className="font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-foreground">
                 <span>Shipping</span>
-                <span className="font-semibold">${shipping.toFixed(2)}</span>
+                <span className="font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>${shipping.toFixed(2)}</span>
               </div>
               <div className="border-t-2 border-border pt-3 flex justify-between">
                 <span className="font-bold text-foreground">Total</span>
-                <span className="font-bold text-primary text-lg">${total.toFixed(2)}</span>
+                <span className="font-bold text-primary text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>${total.toFixed(2)}</span>
               </div>
 
               {canOrder ? (
@@ -350,11 +354,11 @@ export const CartPage = () => {
                     onClick={() => navigate('/checkout')}
                     className="w-full mt-4 bg-primary text-primary-foreground py-3.5 rounded-full font-bold text-sm hover:bg-secondary transition-all duration-200 shadow-soft hover:shadow-soft-lg"
                   >
-                    Continue to Checkout 🌷
+                    Continue to Checkout
                   </button>
                   <Link
                     to="/"
-                    className="block w-full bg-muted text-foreground py-3 rounded-full font-bold text-sm hover:bg-border transition-colors text-center"
+                    className="block w-full bg-accent text-foreground py-3 rounded-full font-bold text-sm hover:bg-muted transition-colors text-center"
                   >
                     Continue Shopping
                   </Link>
@@ -362,7 +366,7 @@ export const CartPage = () => {
               ) : (
                 <div className="mt-4 p-4 bg-error/10 border-2 border-error/20 rounded-2xl">
                   <p className="text-sm text-error text-center font-medium">
-                    Store owners cannot checkout. Switch to a customer account 🌻
+                    Store owners cannot checkout. Switch to a customer account.
                   </p>
                 </div>
               )}
