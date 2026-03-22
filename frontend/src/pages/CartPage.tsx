@@ -199,14 +199,14 @@ export const CartPage = () => {
 
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold text-foreground">{item.productName ?? 'Custom Bouquet'}</h3>
-                      <p className="text-primary font-bold text-sm mt-0.5" style={{ fontFamily: "'DM Serif Display', serif" }}>${(item.unitPrice ?? 0).toFixed(2)}</p>
+                      <p className="text-primary font-bold text-sm mt-0.5" style={{ fontFamily: "'DM Serif Display', serif" }}>฿{(item.unitPrice ?? 0).toFixed(0)}</p>
 
                       {selectedOpts.length > 0 && (
                         <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                           {selectedOpts.map((opt, idx) => (
                             <p key={idx}>
                               {opt.name}
-                              {opt.price > 0 && <span className="text-success ml-1">(+${opt.price.toFixed(2)})</span>}
+                              {opt.price > 0 && <span className="text-muted-foreground ml-1">(+฿{opt.price.toFixed(0)})</span>}
                             </p>
                           ))}
                         </div>
@@ -253,7 +253,7 @@ export const CartPage = () => {
                         </button>
                       </div>
                       <p className="font-bold text-sm text-foreground" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                        ${((item.unitPrice ?? 0) * item.quantity).toFixed(2)}
+                        ฿{((item.unitPrice ?? 0) * item.quantity).toFixed(0)}
                       </p>
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export const CartPage = () => {
                                 {option.name}
                                 {option.priceModifier !== 0 && (
                                   <span className="ml-1 text-xs opacity-80">
-                                    ({option.priceModifier > 0 ? '+' : ''}${option.priceModifier.toFixed(2)})
+                                    ({option.priceModifier > 0 ? '+' : ''}฿{option.priceModifier.toFixed(0)})
                                   </span>
                                 )}
                               </button>
@@ -337,15 +337,15 @@ export const CartPage = () => {
             <div className="rounded-2xl bg-card p-6 border border-border shadow-card space-y-3">
               <div className="flex justify-between text-sm text-foreground">
                 <span>Subtotal</span>
-                <span className="font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>${subtotal.toFixed(2)}</span>
+                <span className="font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>฿{subtotal.toFixed(0)}</span>
               </div>
               <div className="flex justify-between text-sm text-foreground">
                 <span>Shipping</span>
-                <span className="font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>${shipping.toFixed(2)}</span>
+                <span className="font-semibold" style={{ fontFamily: "'DM Serif Display', serif" }}>฿{shipping.toFixed(0)}</span>
               </div>
-              <div className="border-t-2 border-border pt-3 flex justify-between">
+              <div className="border-t border-border pt-3 flex justify-between">
                 <span className="font-bold text-foreground">Total</span>
-                <span className="font-bold text-primary text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>${total.toFixed(2)}</span>
+                <span className="font-bold text-primary text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>฿{total.toFixed(0)}</span>
               </div>
 
               {canOrder ? (
