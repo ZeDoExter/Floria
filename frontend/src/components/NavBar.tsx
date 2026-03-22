@@ -24,9 +24,11 @@ export const NavBar = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group" onClick={() => setMobileOpen(false)}>
-            <span className="text-2xl group-hover:animate-float">🌸</span>
-            <span className="text-xl font-bold font-heading text-foreground tracking-tight">
-              Floria
+            <span
+              style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: '3px' }}
+              className="text-2xl font-semibold text-foreground tracking-widest uppercase"
+            >
+              FLORIA
             </span>
           </Link>
 
@@ -34,7 +36,7 @@ export const NavBar = () => {
           <div className="hidden md:flex items-center gap-2">
             <Link
               to="/"
-              className="px-4 py-2 rounded-full text-sm font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+              className="px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:bg-primary-light hover:text-foreground transition-all duration-200"
             >
               Home
             </Link>
@@ -42,7 +44,7 @@ export const NavBar = () => {
             {user && (
               <Link
                 to="/orders"
-                className="px-4 py-2 rounded-full text-sm font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+                className="px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:bg-primary-light hover:text-foreground transition-all duration-200"
               >
                 Orders
               </Link>
@@ -52,13 +54,13 @@ export const NavBar = () => {
               <>
                 <Link
                   to="/admin/catalog"
-                  className="px-4 py-2 rounded-full text-sm font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+                  className="px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:bg-primary-light hover:text-foreground transition-all duration-200"
                 >
-                  My Shop ✨
+                  My Shop
                 </Link>
                 <Link
                   to="/customer-orders"
-                  className="px-4 py-2 rounded-full text-sm font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+                  className="px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:bg-primary-light hover:text-foreground transition-all duration-200"
                 >
                   Manage Orders
                 </Link>
@@ -68,11 +70,16 @@ export const NavBar = () => {
             {/* Cart */}
             <Link
               to="/cart"
-              className="relative px-4 py-2 rounded-full text-sm font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+              className="relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-foreground border border-border bg-card hover:border-primary/50 transition-all duration-200"
             >
-              🛒 Cart
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+              </svg>
+              Cart
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-scale-in">
+                <span className="ml-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-scale-in">
                   {cartCount}
                 </span>
               )}
@@ -98,13 +105,13 @@ export const NavBar = () => {
               <div className="flex items-center gap-2 ml-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:bg-secondary transition-all duration-200 shadow-soft"
+                  className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-secondary transition-all duration-200"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 rounded-full border-2 border-primary text-primary text-sm font-bold hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                  className="px-4 py-2 rounded-full border border-primary text-primary text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all duration-200"
                 >
                   Sign Up
                 </Link>
@@ -128,31 +135,41 @@ export const NavBar = () => {
         {mobileOpen && (
           <div className="md:hidden border-t border-border py-4 space-y-2 animate-fade-in">
             <Link to="/" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-accent transition-colors">
-              🏠 Home
+              Home
             </Link>
             {user && (
               <Link to="/orders" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-accent transition-colors">
-                📦 Orders
+                Orders
               </Link>
             )}
             {isOwner && (
               <>
                 <Link to="/admin/catalog" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-accent transition-colors">
-                  ✨ My Shop
+                  My Shop
                 </Link>
                 <Link to="/customer-orders" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-accent transition-colors">
-                  📋 Manage Orders
+                  Manage Orders
                 </Link>
               </>
             )}
-            <Link to="/cart" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-accent transition-colors">
-              🛒 Cart {cartCount > 0 && <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5">{cartCount}</span>}
+            <Link to="/cart" onClick={() => setMobileOpen(false)} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground border border-border bg-card hover:border-primary/50 transition-colors">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+              </svg>
+              Cart
+              {cartCount > 0 && (
+                <span className="ml-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-scale-in">
+                  {cartCount}
+                </span>
+              )}
             </Link>
             <div className="border-t border-border pt-3 mt-3 space-y-2">
               {user ? (
                 <>
                   <Link to="/profile" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-accent transition-colors">
-                    👤 {user.displayName || user.email}
+                    {user.displayName || user.email}
                   </Link>
                   <button onClick={handleLogout} className="block w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-error hover:bg-error/10 transition-colors">
                     Logout
