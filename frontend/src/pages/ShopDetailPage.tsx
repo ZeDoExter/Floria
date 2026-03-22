@@ -76,14 +76,16 @@ export const ShopDetailPage = () => {
           onClick={() => navigate(-1)}
           className="mb-5 inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors"
         >
-          <span className="text-xl">←</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
           <span className="text-sm font-medium">Back</span>
         </button>
 
         {/* Shop Header */}
-        <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden mb-7">
+        <div className="bg-card border border-border rounded-2xl shadow-[0_8px_32px_rgba(180,80,100,0.10)] overflow-hidden mb-7">
           <div className="p-6">
-            <h1 className="text-3xl font-bold text-foreground mb-4">{shopName}</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-4" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 300 }}>{shopName}</h1>
             <div className="flex items-center gap-4 flex-wrap text-sm">
               <div className="flex items-center gap-2">
                 <PackageIcon className="h-4 w-4 text-primary" />
@@ -109,8 +111,8 @@ export const ShopDetailPage = () => {
                   onClick={() => setSelectedCategory('all')}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     selectedCategory === 'all'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-foreground hover:bg-border'
+                      ? 'bg-primary text-primary-foreground rounded-full'
+                      : 'bg-muted text-muted-foreground rounded-full hover:bg-border'
                   }`}
                 >
                   All
@@ -123,8 +125,8 @@ export const ShopDetailPage = () => {
                       onClick={() => setSelectedCategory(category.id)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         selectedCategory === category.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground hover:bg-border'
+                          ? 'bg-primary text-primary-foreground rounded-full'
+                          : 'bg-muted text-muted-foreground rounded-full hover:bg-border'
                       }`}
                     >
                       {category.name}
@@ -141,7 +143,7 @@ export const ShopDetailPage = () => {
                 <Link
                   key={product.id}
                   to={`/products/${product.id}`}
-                  className="rounded-xl overflow-hidden bg-card border border-border hover:shadow-md hover:border-primary transition-all group"
+                  className="rounded-2xl overflow-hidden bg-card border border-border hover:shadow-md hover:border-primary transition-all group"
                 >
                   <div className="relative overflow-hidden">
                     {product.imageUrl ? (
@@ -163,8 +165,8 @@ export const ShopDetailPage = () => {
                     <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-2">
                       {product.name}
                     </h3>
-                    <p className="text-primary font-bold text-base">
-                      ${product.basePrice.toFixed(2)}
+                    <p className="text-primary font-bold text-base" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                      ฿{product.basePrice.toFixed(2)}
                     </p>
                   </div>
                 </Link>

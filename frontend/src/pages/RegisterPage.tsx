@@ -34,5 +34,9 @@ export const RegisterPage = () => {
     return null;
   }
 
-  return <RegisterForm onSubmit={handleRegister} isLoading={isLoading} error={error} />;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <RegisterForm onSubmit={handleRegister} isLoading={isLoading} error={error} />
+    </div>
+  );
 };
