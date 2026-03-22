@@ -8,9 +8,9 @@ import { SearchIcon } from '../components/icons/SearchIcon';
 import { XMarkIcon } from '../components/icons/XMarkIcon';
 
 const SkeletonCard = () => (
-  <div className="rounded-2xl overflow-hidden bg-card border border-border animate-fade-in">
-    <div className="skeleton w-full h-56" />
-    <div className="p-4 space-y-3">
+  <div className="rounded-2xl overflow-hidden bg-card border border-border">
+    <div className="skeleton aspect-square w-full" />
+    <div className="p-3 space-y-2">
       <div className="skeleton h-4 w-3/4" />
       <div className="skeleton h-3 w-1/2" />
       <div className="skeleton h-4 w-1/3" />
@@ -155,83 +155,162 @@ export const HomePage = () => {
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/40 via-background to-muted/30" />
-        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="space-y-6 animate-fade-in-up">
-            <div className="space-y-4 max-w-2xl">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-heading text-foreground leading-tight">
-                Fresh Blooms, <br />
-                <span className="text-primary">Delivered</span> with Love 🌷
-              </h1>
-              <p className="text-lg text-muted-foreground font-body">
-                Discover curated flower boutiques that turn everyday moments into beautiful memories.
-              </p>
-            </div>
-
-            {/* Search Bar */}
-            <div className="max-w-xl relative">
-              <div className="relative">
-                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <input
-                  id="search-products"
-                  type="text"
-                  placeholder="Search for flowers, bouquets..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3.5 rounded-2xl border-2 border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 focus:border-primary shadow-soft transition-all duration-200"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={handleClearSearch}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <XMarkIcon className="h-5 w-5" />
-                  </button>
-                )}
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center animate-fade-in-up">
+            {/* Left: Text + Search */}
+            <div className="space-y-6">
+              <div className="inline-block text-xs font-semibold text-muted-foreground uppercase tracking-[3px]"
+                style={{ fontFamily: "'Inter', sans-serif" }}>
+                Premium Flower Boutique · Bangkok
               </div>
+              <h1 className="text-5xl lg:text-6xl font-light text-foreground leading-[1.1]"
+                style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: '-0.5px' }}>
+                Fresh Blooms,{' '}
+                <em className="text-primary">Curated</em>{' '}
+                for You
+              </h1>
+              <p className="text-base text-muted-foreground leading-relaxed"
+                style={{ fontFamily: "'Sarabun', sans-serif" }}>
+                ดอกไม้สดคัดพิเศษจากฟาร์ม พร้อมบริการจัดช่อตามต้องการ ส่งถึงบ้านทุกวัน
+              </p>
 
-              {/* Search Results Dropdown */}
-              {searchQuery && (
-                <div className="absolute z-10 mt-2 w-full bg-card border-2 border-border rounded-2xl shadow-soft-lg max-h-96 overflow-y-auto animate-scale-in">
-                  {isSearching ? (
-                    <div className="p-6 text-center text-muted-foreground">
-                      <span className="animate-pulse-soft">🔍 Searching...</span>
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    <div className="py-2">
-                      {searchResults.map((result) => (
-                        <Link
-                          key={result.id}
-                          to={`/products/${result.id}`}
-                          className="block px-4 py-3 hover:bg-accent/50 transition-colors"
-                          onClick={handleClearSearch}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-foreground truncate">
-                                {result.name}
-                              </h3>
-                              {result.description && (
-                                <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                  {result.description}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-sm font-bold text-primary whitespace-nowrap">
-                              ${result.basePrice.toFixed(2)}
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-6 text-center text-muted-foreground">
-                      No flowers found for "{searchQuery}" 🥀
-                    </div>
+              {/* Search Bar */}
+              <div className="max-w-xl relative">
+                <div className="flex bg-card border border-border rounded-full overflow-hidden shadow-[0_4px_20px_rgba(180,80,100,0.08)]">
+                  <div className="flex items-center pl-5 text-muted-foreground">
+                    <SearchIcon className="h-4 w-4" />
+                  </div>
+                  <input
+                    id="search-products"
+                    type="text"
+                    placeholder="ค้นหาดอกไม้, ช่อดอกไม้..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 pl-3 pr-4 py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-sm"
+                    style={{ fontFamily: "'Sarabun', sans-serif" }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="pr-4 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
                   )}
                 </div>
-              )}
+
+                {/* Search Results Dropdown */}
+                {searchQuery && (
+                  <div className="absolute z-10 mt-2 w-full bg-card border border-border rounded-2xl shadow-[0_8px_32px_rgba(180,80,100,0.10)] max-h-96 overflow-y-auto animate-scale-in">
+                    {isSearching ? (
+                      <div className="p-6 text-center text-muted-foreground text-sm">Searching...</div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="py-2">
+                        {searchResults.map((result) => (
+                          <Link
+                            key={result.id}
+                            to={`/products/${result.id}`}
+                            className="block px-4 py-3 hover:bg-accent transition-colors"
+                            onClick={handleClearSearch}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-foreground truncate text-sm"
+                                  style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                                  {result.name}
+                                </h3>
+                                {result.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5"
+                                    style={{ fontFamily: "'Sarabun', sans-serif" }}>
+                                    {result.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-sm text-primary whitespace-nowrap"
+                                style={{ fontFamily: "'DM Serif Display', serif" }}>
+                                ฿{result.basePrice.toFixed(0)}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-6 text-center text-muted-foreground text-sm"
+                        style={{ fontFamily: "'Sarabun', sans-serif" }}>
+                        ไม่พบสินค้า "{searchQuery}"
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Featured product cards (decorative) */}
+            <div className="hidden lg:block">
+              <div className="relative">
+                {/* Featured top-card placeholder — shows first loaded product if available */}
+                {displayedProducts[0] && (
+                  <Link
+                    to={`/products/${displayedProducts[0].id}`}
+                    className="block bg-card rounded-2xl border border-border shadow-[0_8px_32px_rgba(180,80,100,0.10)] overflow-hidden mb-3 hover:shadow-[0_12px_40px_rgba(180,80,100,0.16)] transition-all duration-300"
+                  >
+                    <div className="flex h-24">
+                      <div className="w-32 flex-shrink-0 bg-gradient-to-br from-accent to-muted overflow-hidden">
+                        {displayedProducts[0].imageUrl ? (
+                          <img src={displayedProducts[0].imageUrl} alt={displayedProducts[0].name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <PackageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 p-4 flex flex-col justify-center">
+                        <div className="text-xs text-primary font-semibold uppercase tracking-wider mb-1"
+                          style={{ fontFamily: "'Inter', sans-serif" }}>Featured</div>
+                        <div className="text-base text-foreground font-semibold"
+                          style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                          {displayedProducts[0].name}
+                        </div>
+                        <div className="text-base text-primary mt-1"
+                          style={{ fontFamily: "'DM Serif Display', serif" }}>
+                          ฿{displayedProducts[0].basePrice.toFixed(0)}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                )}
+                {/* Two small cards */}
+                <div className="grid grid-cols-2 gap-3">
+                  {displayedProducts.slice(1, 3).map((product) => (
+                    <Link
+                      key={product.id}
+                      to={`/products/${product.id}`}
+                      className="block bg-card rounded-2xl border border-border shadow-[0_4px_16px_rgba(180,80,100,0.07)] overflow-hidden hover:shadow-[0_8px_28px_rgba(180,80,100,0.14)] transition-all duration-300"
+                    >
+                      <div className="aspect-square bg-gradient-to-br from-accent to-muted overflow-hidden">
+                        {product.imageUrl ? (
+                          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <PackageIcon className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <div className="text-sm text-foreground font-medium"
+                          style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                          {product.name}
+                        </div>
+                        <div className="text-sm text-primary mt-0.5"
+                          style={{ fontFamily: "'DM Serif Display', serif" }}>
+                          ฿{product.basePrice.toFixed(0)}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -239,9 +318,14 @@ export const HomePage = () => {
 
       {/* Products Section */}
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold font-heading text-foreground mb-8">
-          ✨ Discover Products
-        </h2>
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-px bg-gradient-to-r from-transparent to-border flex-1" />
+          <h2 className="text-2xl italic text-foreground whitespace-nowrap"
+            style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            Discover All Products
+          </h2>
+          <div className="h-px bg-gradient-to-l from-transparent to-border flex-1" />
+        </div>
 
         {isLoading && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -265,26 +349,36 @@ export const HomePage = () => {
                 <Link
                   key={product.id}
                   to={`/products/${product.id}`}
-                  className={`group relative rounded-2xl overflow-hidden bg-card border-2 border-border hover:border-primary/50 hover:shadow-card-hover transition-all duration-300 animate-fade-in stagger-${Math.min(index % 8 + 1, 8)}`}
+                  className={`group relative bg-card rounded-2xl overflow-hidden border border-border hover:shadow-[0_8px_28px_rgba(180,80,100,0.14)] transition-all duration-300 animate-fade-in stagger-${Math.min(index % 8 + 1, 8)}`}
+                  style={{ boxShadow: '0 4px 16px rgba(180, 80, 100, 0.07)' }}
                 >
-                  {/* Image */}
-                  <div className="relative overflow-hidden">
+                  {/* Square Image */}
+                  <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-accent to-muted">
                     {product.imageUrl ? (
                       <img
                         src={product.imageUrl}
                         alt={product.name}
-                        className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-56 bg-gradient-to-br from-accent to-muted flex items-center justify-center">
-                        <span className="text-4xl group-hover:animate-float">🌸</span>
+                      <div className="w-full h-full flex items-center justify-center">
+                        <PackageIcon className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
 
-                    {/* Sold Out Badge */}
+                    {/* Category badge */}
+                    {product.categoryName && !product.isOutOfStock && (
+                      <div className="absolute bottom-2 left-2 bg-white/90 text-muted-foreground text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                        style={{ fontFamily: "'Inter', sans-serif" }}>
+                        {product.categoryName}
+                      </div>
+                    )}
+
+                    {/* Sold Out Overlay */}
                     {product.isOutOfStock && (
-                      <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
-                        <span className="bg-sold-out text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                      <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                        <span className="bg-card border border-border text-muted-foreground text-[10px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full"
+                          style={{ fontFamily: "'Inter', sans-serif" }}>
                           Sold Out
                         </span>
                       </div>
@@ -292,25 +386,33 @@ export const HomePage = () => {
                   </div>
 
                   {/* Info */}
-                  <div className="p-4 space-y-1.5">
-                    <h3 className="font-bold text-foreground text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                  <div className="p-3">
+                    <div className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors mb-0.5"
+                      style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                       {product.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      {product.categoryName || 'Flowers'}
-                    </p>
+                    </div>
+                    {product.categoryName && (
+                      <div className="text-[11px] text-muted-foreground mb-2"
+                        style={{ fontFamily: "'Sarabun', sans-serif" }}>
+                        {product.categoryName}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-primary">
-                        ${product.basePrice.toFixed(2)}
-                      </p>
-                      {product.ownerId && (
-                        <Link
-                          to={`/shops/${product.ownerId}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-xs text-muted-foreground hover:text-primary transition-colors truncate max-w-[80px]"
+                      <span className="text-base text-primary"
+                        style={{ fontFamily: "'DM Serif Display', serif" }}>
+                        ฿{product.basePrice.toFixed(0)}
+                      </span>
+                      {!product.isOutOfStock && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); }}
+                          className="w-7 h-7 rounded-full bg-primary-light text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 flex items-center justify-center flex-shrink-0"
+                          aria-label="View product"
                         >
-                          {ownerNames[product.ownerId] || 'Shop'}
-                        </Link>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -323,8 +425,7 @@ export const HomePage = () => {
               <div ref={observerTarget} className="py-10 text-center">
                 {isLoadingMore && (
                   <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                    <span className="animate-pulse-soft">🌸</span>
-                    <span>Loading more blooms...</span>
+                    <span>Loading more products...</span>
                   </div>
                 )}
               </div>
@@ -333,14 +434,14 @@ export const HomePage = () => {
             {!hasMore && displayedProducts.length > 0 && (
               <div className="text-center py-10">
                 <p className="text-muted-foreground text-sm">
-                  You've explored all our flowers! 🌺
+                  You've explored all our flowers.
                 </p>
               </div>
             )}
 
             {displayedProducts.length === 0 && (
               <div className="text-center py-16 bg-card rounded-3xl border-2 border-border animate-fade-in-up">
-                <span className="text-5xl mb-4 block">🌱</span>
+                <PackageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="font-bold text-foreground text-lg mb-1">No products yet</h3>
                 <p className="text-muted-foreground text-sm">Check back soon for beautiful blooms!</p>
               </div>
