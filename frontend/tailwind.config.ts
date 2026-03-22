@@ -9,19 +9,22 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['Quicksand', 'Nunito', 'sans-serif'],
-        body: ['Nunito', 'Quicksand', 'sans-serif'],
+        heading: ['Cormorant Garamond', 'serif'],
+        body: ['Sarabun', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       colors: {
         background: 'var(--color-background)',
+        'background-alt': 'var(--color-background-alt)',
         foreground: 'var(--color-foreground)',
         card: {
           DEFAULT: 'var(--color-card)',
           foreground: 'var(--color-card-foreground)',
         },
+        surface: 'var(--color-surface)',
         primary: {
           DEFAULT: 'var(--color-primary)',
           foreground: 'var(--color-primary-foreground)',
+          light: 'var(--color-primary-light)',
         },
         secondary: {
           DEFAULT: 'var(--color-secondary)',
@@ -35,6 +38,7 @@ const config: Config = {
           DEFAULT: 'var(--color-muted)',
           foreground: 'var(--color-muted-foreground)',
         },
+        body: 'var(--color-body)',
         border: 'var(--color-border)',
         success: {
           DEFAULT: 'var(--color-success)',

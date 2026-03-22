@@ -239,6 +239,9 @@ h1, h2, h3, h4, h5, h6 {
   --color-surface: #2a1a1e;
   --color-warning: #fbbf24;
   --color-sold-out: #9d7080;
+  --color-body: #9d7080;
+  --color-background-alt: #200d12;
+  --color-primary-light: #2d1219;
 }
 
 /* Carousel/Slider styles */
